@@ -31,6 +31,13 @@ The API applies the Prisma migrations when its container starts. PostgreSQL data
 stored in the `postgres_data` volume and receipt uploads are shared by the API and
 OCR services through the `uploads` volume.
 
+## Continuous integration
+
+GitHub Actions runs on every push and pull request. The workflow tests the API
+against PostgreSQL 16, applies the Prisma migration, builds the web application,
+runs the OCR pytest suite, and builds and smoke-tests the complete Docker Compose
+stack, including the API and OCR health endpoints.
+
 ## Local development
 
 See the individual `api/`, `ocr/`, and `web/` directories for their package and
