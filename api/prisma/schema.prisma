@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReceiptStatus {
+  UPLOADED
+  PROCESSING
+  NEEDS_REVIEW
+  CONFIRMED
+  FAILED
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         Role       @default(USER)
+  createdAt    DateTime   @default(now())
+  receipts     Receipt[]
+  categories   Category[]
+  budgets      Budget[]
+}
+
+model Category {
+  id       Int           @id @default(autoincrement())
+  userId   String?
+  name     String
+  keywords String[]
+  user     User?         @relation(fields: [userId], references: [id])
+  receipts Receipt[]
+  items    ReceiptItem[]
+  budgets  Budget[]
+  @@unique([userId, name])
+}
+
+model Receipt {
+  id            String        @id @default(uuid())
+  userId        String
+  imagePath     String
+  imageHash     String
+  status        ReceiptStatus @default(UPLOADED)
+  merchantName  String?
+  purchaseDate  DateTime?     @db.Date
+  totalAmount   Int?
+  categoryId    Int?
+  ocrConfidence Float?
+  rawText       String?
+  duplicateOfId String?
+  confirmedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id])
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  duplicateOf   Receipt?      @relation("Duplicate", fields: [duplicateOfId], references: [id])
+  duplicates    Receipt[]     @relation("Duplicate")
+  items         ReceiptItem[]
+  ocrRuns       OcrRun[]
+  corrections   Correction[]
+  groundTruth   GroundTruth?
+  @@index([userId, purchaseDate(sort: Desc)])
+  @@index([userId, status])
+  @@index([imageHash])
+}
+
+model ReceiptItem {
+  id         String    @id @default(uuid())
+  receiptId  String
+  name       String
+  qty        Float     @default(1)
+  unitPrice  Int?
+  lineTotal  Int
+  categoryId Int?
+  receipt    Receipt   @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  category   Category? @relation(fields: [categoryId], references: [id])
+  @@index([receiptId])
+}
+
+model OcrRun {
+  id               String   @id @default(uuid())
+  receiptId        String
+  engine           String
+  preprocessConfig Json
+  rawText          String
+  fields           Json
+  durationMs       Int
+  createdAt        DateTime @default(now())
+  receipt          Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  @@index([receiptId])
+}
+
+model GroundTruth {
+  id           String   @id @default(uuid())
+  receiptId    String   @unique
+  merchantName String
+  purchaseDate DateTime @db.Date
+  totalAmount  Int
+  items        Json?
+  split        String
+  receipt      Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+}
+
+model Correction {
+  id             String   @id @default(uuid())
+  receiptId      String
+  field          String
+  ocrValue       String?
+  correctedValue String
+  createdAt      DateTime @default(now())
+  receipt        Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  @@index([receiptId])
+}
+
+model Budget {
+  id          String   @id @default(uuid())
+  userId      String
+  categoryId  Int
+  month       DateTime @db.Date
+  limitAmount Int
+  user        User     @relation(fields: [userId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
+  @@unique([userId, categoryId, month])
+}
+
