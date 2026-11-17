@@ -70,7 +70,7 @@ Minggu 6 hanya dipakai untuk menutup utang dari minggu sebelumnya.
 
 ## Skema database
 
-Delapan tabel, dengan tiga yang jarang ada di project serupa: `ocr_runs` (menyimpan hasil tiap percobaan engine dan konfigurasi preprocessing), `ground_truth` (jawaban benar untuk evaluasi), dan `corrections` (apa yang diubah user, berguna untuk analisis kegagalan). Nominal disimpan sebagai integer rupiah supaya tidak ada masalah pembulatan float.
+Sembilan tabel, dengan tiga yang jarang ada di project serupa: `ocr_runs` (menyimpan hasil tiap percobaan engine dan konfigurasi preprocessing), `ground_truth` (jawaban benar untuk evaluasi), dan `corrections` (apa yang diubah user, berguna untuk analisis kegagalan). Nominal disimpan sebagai integer rupiah supaya tidak ada masalah pembulatan float.
 
 ```prisma
 enum Role { USER ADMIN }
@@ -86,6 +86,18 @@ model User {
   receipts     Receipt[]
   categories   Category[]
   budgets      Budget[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model Category {
@@ -227,6 +239,17 @@ Dua service: **Express** (publik, prefix `/api/v1`, semua selain auth memakai JW
 | GET | `/budgets` | Anggaran bulan tertentu beserta realisasi | 200 |
 | PUT | `/budgets` | Atur anggaran per kategori | 200 |
 | GET | `/export/receipts.csv` | Ekspor struk terkonfirmasi | 200 |
+
+Endpoint auth menerima dan mengembalikan JSON. Register memakai body
+`{ "email", "password", "name" }`, login memakai `{ "email", "password" }`,
+dan refresh memakai `{ "refreshToken" }`. Register mengembalikan HTTP 201;
+login dan refresh mengembalikan HTTP 200 dengan `{ "user", "accessToken",
+"refreshToken" }`. Access token adalah JWT yang berlaku 15 menit. Refresh
+token adalah nilai acak 256-bit yang hanya disimpan sebagai SHA-256 hash,
+berlaku 7 hari, dan dirotasi pada setiap refresh. Pemakaian ulang refresh
+token yang sudah dicabut mencabut semua refresh token milik user tersebut.
+`GET /auth/me` memerlukan header `Authorization: Bearer <accessToken>` dan
+mengembalikan `{ "user" }`.
 
 ### Endpoint evaluasi (role ADMIN)
 
