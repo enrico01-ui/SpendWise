@@ -20,7 +20,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://spendwise:spendwise@db:5432/spendwise?schema=public}
       API_PORT: 3000
       OCR_URL: http://ocr:8000
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-development}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-development-32-chars}
     ports:
       - "${API_HOST_PORT:-3000}:3000"
     depends_on:

@@ -1,11 +1,11 @@
 import type { RequestHandler } from "express";
-import { AppError } from "../lib/errors.js";
-import { verifyAccessToken } from "../services/auth.service.js";
+import { verifyAccessToken } from "../../modules/auth/auth.service.js";
+import { UnauthorizedError } from "../errors/app-error.js";
 
 export const requireAuth: RequestHandler = (request, _response, next) => {
   const header = request.header("authorization");
   if (!header || !header.startsWith("Bearer ")) {
-    next(new AppError(401, "UNAUTHORIZED", "Authentication is required"));
+    next(new UnauthorizedError("Authentication is required"));
     return;
   }
 
@@ -15,4 +15,11 @@ export const requireAuth: RequestHandler = (request, _response, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const getAuthUser = (request: Parameters<RequestHandler>[0]) => {
+  if (!request.user) {
+    throw new UnauthorizedError();
+  }
+  return request.user;
 };

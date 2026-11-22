@@ -1,6 +1,6 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppError } from "../src/lib/errors.js";
+import { AppError } from "../../common/errors/app-error.js";
 
 const auth = vi.hoisted(() => ({
   register: vi.fn(),
@@ -10,9 +10,11 @@ const auth = vi.hoisted(() => ({
   getUser: vi.fn()
 }));
 
-vi.mock("../src/services/auth.service.js", () => auth);
+vi.mock("./auth.service.js", () => auth);
 
-import { app } from "../src/app.js";
+import { createApp } from "../../app.js";
+
+const app = createApp();
 
 describe("authentication routes", () => {
   beforeEach(() => {
@@ -27,7 +29,7 @@ describe("authentication routes", () => {
     });
 
     const response = await request(app)
-      .post("/auth/register")
+      .post("/api/v1/auth/register")
       .send({ email: "user@example.com", password: "password123", name: "User" });
 
     expect(response.status).toBe(201);
@@ -40,7 +42,7 @@ describe("authentication routes", () => {
     );
 
     const response = await request(app)
-      .post("/auth/register")
+      .post("/api/v1/auth/register")
       .send({ email: "user@example.com", password: "password123", name: "User" });
 
     expect(response.status).toBe(409);
@@ -51,7 +53,7 @@ describe("authentication routes", () => {
     auth.login.mockRejectedValue(new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password"));
 
     const response = await request(app)
-      .post("/auth/login")
+      .post("/api/v1/auth/login")
       .send({ email: "user@example.com", password: "wrongpass" });
 
     expect(response.status).toBe(401);
@@ -64,7 +66,7 @@ describe("authentication routes", () => {
       refreshToken: "refresh-2"
     });
 
-    const response = await request(app).post("/auth/refresh").send({ refreshToken: "refresh-1" });
+    const response = await request(app).post("/api/v1/auth/refresh").send({ refreshToken: "refresh-1" });
 
     expect(response.status).toBe(200);
     expect(response.body.refreshToken).toBe("refresh-2");
@@ -75,7 +77,7 @@ describe("authentication routes", () => {
       new AppError(401, "REFRESH_TOKEN_REUSE", "Refresh token reuse detected")
     );
 
-    const response = await request(app).post("/auth/refresh").send({ refreshToken: "revoked" });
+    const response = await request(app).post("/api/v1/auth/refresh").send({ refreshToken: "revoked" });
 
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe("REFRESH_TOKEN_REUSE");
@@ -87,7 +89,7 @@ describe("authentication routes", () => {
     });
 
     const expiredResponse = await request(app)
-      .get("/auth/me")
+      .get("/api/v1/auth/me")
       .set("Authorization", "Bearer expired");
     expect(expiredResponse.status).toBe(401);
 
@@ -99,10 +101,23 @@ describe("authentication routes", () => {
       role: "USER"
     });
 
-    const validResponse = await request(app).get("/auth/me").set("Authorization", "Bearer valid");
+    const validResponse = await request(app).get("/api/v1/auth/me").set("Authorization", "Bearer valid");
     expect(validResponse.status).toBe(200);
 
-    const missingResponse = await request(app).get("/auth/me");
+    const missingResponse = await request(app).get("/api/v1/auth/me");
     expect(missingResponse.status).toBe(401);
+  });
+
+  it("returns a generic 500 for unexpected errors", async () => {
+    auth.login.mockRejectedValue(new Error("database password"));
+
+    const response = await request(app)
+      .post("/api/v1/auth/login")
+      .send({ email: "user@example.com", password: "password123" });
+
+    expect(response.status).toBe(500);
+    expect(response.body.error.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(response.body.error.message).toBe("Internal server error");
+    expect(response.body.error).not.toHaveProperty("stack");
   });
 });

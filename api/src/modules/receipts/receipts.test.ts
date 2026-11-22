@@ -1,6 +1,6 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppError } from "../src/lib/errors.js";
+import { AppError } from "../../common/errors/app-error.js";
 
 const auth = vi.hoisted(() => ({
   verifyAccessToken: vi.fn(),
@@ -18,10 +18,12 @@ const receipts = vi.hoisted(() => ({
   deleteReceipt: vi.fn()
 }));
 
-vi.mock("../src/services/auth.service.js", () => auth);
-vi.mock("../src/services/receipt.service.js", () => receipts);
+vi.mock("../auth/auth.service.js", () => auth);
+vi.mock("./receipts.service.js", () => receipts);
 
-import { app } from "../src/app.js";
+import { createApp } from "../../app.js";
+
+const app = createApp();
 
 const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -46,7 +48,7 @@ describe("receipt routes", () => {
 
   it("rejects a wrong MIME type", async () => {
     const response = await request(app)
-      .post("/receipts")
+      .post("/api/v1/receipts")
       .set("Authorization", "Bearer valid")
       .attach("file", Buffer.from("not an image"), {
         filename: "receipt.txt",
@@ -58,7 +60,7 @@ describe("receipt routes", () => {
 
   it("rejects text renamed to .jpg", async () => {
     const response = await request(app)
-      .post("/receipts")
+      .post("/api/v1/receipts")
       .set("Authorization", "Bearer valid")
       .attach("file", Buffer.from("plain text"), {
         filename: "receipt.jpg",
@@ -70,7 +72,7 @@ describe("receipt routes", () => {
 
   it("rejects files larger than 10 MB", async () => {
     const response = await request(app)
-      .post("/receipts")
+      .post("/api/v1/receipts")
       .set("Authorization", "Bearer valid")
       .attach("file", Buffer.alloc(10 * 1024 * 1024 + 1), {
         filename: "large.png",
@@ -89,7 +91,7 @@ describe("receipt routes", () => {
     });
 
     const response = await request(app)
-      .get("/receipts")
+      .get("/api/v1/receipts")
       .query({
         status: "NEEDS_REVIEW",
         from: "2026-01-01",
@@ -126,7 +128,7 @@ describe("receipt routes", () => {
     );
 
     const response = await request(app)
-      .get("/receipts/other-user-receipt")
+      .get("/api/v1/receipts/other-user-receipt")
       .set("Authorization", "Bearer valid");
 
     expect(response.status).toBe(404);
@@ -136,7 +138,7 @@ describe("receipt routes", () => {
   it("accepts valid PNG magic bytes", async () => {
     receipts.uploadReceipt.mockResolvedValue({ id: "receipt-png", status: "UPLOADED" });
     const response = await request(app)
-      .post("/receipts")
+      .post("/api/v1/receipts")
       .set("Authorization", "Bearer valid")
       .attach("file", png, { filename: "receipt.png", contentType: "image/png" });
     expect(response.status).toBe(202);
