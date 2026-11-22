@@ -9,7 +9,9 @@ export const errorHandler: ErrorRequestHandler = (
   error,
   _request,
   response,
+  next,
 ) => {
+  void next;
   const requestId = response.locals.requestId;
 
   if (error instanceof AppError) {
