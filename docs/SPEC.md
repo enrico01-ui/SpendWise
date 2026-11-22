@@ -116,7 +116,7 @@ model Receipt {
   id            String        @id @default(uuid())
   userId        String
   imagePath     String
-  imageHash     String        // perceptual hash, hex
+  imageHash     String?       // perceptual hash, hex; dihitung worker setelah upload
   status        ReceiptStatus @default(UPLOADED)
   merchantName  String?
   purchaseDate  DateTime?     @db.Date
@@ -218,7 +218,7 @@ Dua service: **Express** (publik, prefix `/api/v1`, semua selain auth memakai JW
 | POST | `/auth/login` | Login, kembalikan access + refresh token | 200 |
 | POST | `/auth/refresh` | Tukar refresh token | 200 |
 | GET | `/auth/me` | Profil user saat ini | 200 |
-| POST | `/receipts` | Unggah foto (multipart, maks 10 MB, jpg/png/heic); mulai pemrosesan | 202 `{id, status}` |
+| POST | `/receipts` | Unggah foto (multipart, maks 10 MB, jpg/png saja); buat struk `UPLOADED` | 202 `{id, status}` |
 | GET | `/receipts` | Daftar struk; filter `status`, `from`, `to`, `categoryId`, `q`, paginasi | 200 |
 | GET | `/receipts/:id` | Detail: field, item, peringatan validasi, info duplikat | 200 |
 | GET | `/receipts/:id/image` | Gambar asli (`?processed=true` untuk hasil preprocessing) | 200 |
