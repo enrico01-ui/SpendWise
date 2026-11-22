@@ -1,80 +1,116 @@
-# SpendWise: Roadmap, Skema Database, dan Endpoint
+# SpendWise Specification
 
-Nov 14, 2026 · @Grim
+## Architecture
 
-## Ringkasan dan arsitektur
+SpendWise turns receipt photos into validated, categorized expense data.
 
-SpendWise mengubah foto struk menjadi data pengeluaran yang sudah divalidasi, bebas duplikat, dan terkategori, lalu menampilkannya sebagai analitik. Targetnya 5 minggu dengan ±10-15 jam per minggu, dan minggu ke-6 sebagai cadangan. Pembeda project ini bukan OCR-nya, tapi angka akurasi OCR yang kamu ukur sendiri dan tulis di README.
+Flow:
 
-Alurnya: unggah foto, Express menyimpan gambar dan membuat baris struk berstatus `UPLOADED`, worker memanggil service OCR (FastAPI), hasilnya divalidasi dan dicek duplikat, lalu struk menunggu review user (`NEEDS_REVIEW`) sebelum dikonfirmasi (`CONFIRMED`) dan masuk ke analitik.
+1. Upload a receipt image.
+2. Express saves the image and creates a `Receipt` with status `UPLOADED`.
+3. A worker calls the internal FastAPI OCR service.
+4. Express validates the OCR result and checks for duplicates.
+5. A receipt enters `NEEDS_REVIEW` for user correction.
+6. The user confirms the receipt as `CONFIRMED`.
+7. Confirmed receipts are available to analytics.
 
-| Komponen | Pilihan | Alasan |
-| --- | --- | --- |
-| Frontend | React + TypeScript + Vite, Tailwind + ShadCN, Recharts | Sudah kamu kuasai; Recharts cukup untuk dashboard |
-| API utama | Express + TypeScript, Prisma, JWT | Auth, CRUD, dan logika bisnis tetap di stack yang kamu paham |
-| Service OCR | FastAPI (Python), OpenCV, Tesseract, PaddleOCR | Ekosistem OCR dan image processing terbaik ada di Python; dipisah supaya engine mudah diganti |
-| Database | PostgreSQL + ekstensi `pg_trgm` | Fuzzy match merchant langsung di SQL |
-| Antrean | Kolom `status` + worker polling | Tanpa Redis; cukup untuk skala project ini |
-| Penyimpanan gambar | Docker volume lokal | S3 tidak diperlukan untuk portofolio |
-| Infra | Docker Compose | Satu perintah menjalankan semua service |
+Services communicate as follows:
 
-&#91;embedded content: arsitektur · 5 komponen\]
+- React and Express use the public `/api/v1` HTTP contract.
+- Express is the only public application API and manages authentication, receipts, categories, analytics, budgets, and exports.
+- Express calls FastAPI only over the internal Docker network.
+- PostgreSQL is the persistent database.
+- Receipt images are stored in a Docker volume.
+- An upload is acknowledged immediately and processed asynchronously through receipt status polling.
 
-Express hanya berbicara ke service OCR lewat HTTP internal, jadi engine OCR bisa diganti tanpa menyentuh API utama.
+## Architecture (api)
 
-## Roadmap 5 minggu
+The Express API uses a module-based layout under `api/src`:
 
-Setiap minggu berakhir dengan satu milestone yang bisa didemokan. Kalau satu minggu meleset, potong fitur dari daftar di bagian Risiko, bukan evaluasinya.
+```text
+src/
+  app.ts
+  server.ts
+  config/env.ts
+  database/prisma.ts
+  common/
+  modules/
+    auth/
+    receipts/
+    health/
+```
 
-&#91;embedded content: roadmap · 5 minggu, 5 milestone\]
+- `app.ts` exports `createApp()` and has no listen call or import-time side effects.
+- `server.ts` creates the app, listens on the configured port, and shuts down gracefully.
+- `config/env.ts` is the only file that reads `process.env`. It validates startup configuration with Zod and exports a typed readonly environment object.
+- `database/prisma.ts` owns the Prisma client.
+- `common/` contains shared errors, middleware, logging, and Express types.
+- Each module owns its routes, controller, service, schemas, tests, and constants.
 
-M2 menghasilkan angka baseline yang menjadi dasar semua perbandingan berikutnya, dan M5 menutup dengan README serta demo.
+Rules:
 
-**Minggu 1: fondasi dan OCR baseline**
+- Routes only wire paths, middleware, and controller methods.
+- Controllers read already-validated input, call exactly one service method, and set status and body.
+- Controllers contain no Prisma calls, business logic, validation, or `try/catch`.
+- Services hold business logic and Prisma access. They never import Express types or receive `req` or `res`; they receive plain values such as `userId` and DTOs.
+- Zod schemas live in `<module>.schemas.ts`. Schemas infer and export DTO types. Normalization belongs in schemas, not routes or controllers.
+- Configuration is read only through `config/env.ts`.
+- Application errors use `AppError` subclasses and a global error handler.
+- Express 5 forwards rejected promises, so routes and controllers must not use `asyncHandler`.
 
-- Docker Compose (web, api, ocr, db), skema Prisma awal, auth JWT
-- Upload struk, simpan gambar, status `UPLOADED`
-- FastAPI + Tesseract mengembalikan teks mentah
-- Kumpulkan 30 foto struk yang bervariasi (terang, gelap, miring, kusut) dan mulai isi file ground truth
-- **M1:** foto diunggah dan teks mentah tampil di UI
+## Tech stack
 
-**Minggu 2: preprocessing dan parsing**
+| Component | Technology |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, Tailwind, ShadCN, Recharts, TanStack Query |
+| Public API | Node.js, Express, TypeScript, Prisma |
+| Database | PostgreSQL |
+| Authentication | JWT access and refresh tokens, bcrypt |
+| OCR service | Python 3.11, FastAPI, OpenCV, Tesseract, PaddleOCR |
+| Infrastructure | Docker Compose |
+| API tests | Vitest and Supertest |
+| OCR tests | pytest |
 
-- OpenCV: grayscale, denoise, adaptive threshold, deskew, perspective crop
-- Parser untuk merchant, tanggal, total, dan item (regex + heuristik baris), mulai dari 3 jenis merchant paling umum
-- Eval script v0: akurasi per field pada 30 struk, sebelum vs sesudah preprocessing
-- **M2:** ada angka baseline dan angka perbaikan dari preprocessing
+Money is stored and returned as integer rupiah. API dates use ISO strings.
 
-**Minggu 3: validasi, review UI, duplikat**
+## Database schema
 
-- Aturan validasi (jumlah item cocok dengan total, tanggal masuk akal, nominal positif)
-- Layar review: gambar di kiri, field yang bisa diedit di kanan, field berkeyakinan rendah disorot
-- Deteksi duplikat dua tahap: perceptual hash gambar, lalu fuzzy match merchant + tanggal + nominal
-- **M3:** struk yang salah bisa dikoreksi dan duplikat ditandai
+The Prisma schema is the source of truth. It currently defines nine models:
 
-**Minggu 4: kategori, analitik, engine kedua**
+- `User`
+- `RefreshToken`
+- `Category`
+- `Receipt`
+- `ReceiptItem`
+- `OcrRun`
+- `GroundTruth`
+- `Correction`
+- `Budget`
 
-- Kategori berbasis aturan, lalu TF-IDF + Logistic Regression, bandingkan akurasinya
-- Dashboard: total per bulan, per kategori, merchant teratas, tren
-- Tambahkan PaddleOCR dan bandingkan dengan Tesseract
-- **M4:** dashboard berjalan dengan data struk asli
-
-**Minggu 5: evaluasi, test, dokumentasi**
-
-- Tabel evaluasi final pada 50 struk, plus analisis 3-5 jenis kegagalan terbanyak
-- Test untuk parser, validasi, duplikat, dan alur upload sampai konfirmasi
-- README dengan arsitektur, keputusan dan trade-off, angka evaluasi, demo GIF; deploy
-- **M5:** repo siap dilampirkan saat melamar
-
-Minggu 6 hanya dipakai untuk menutup utang dari minggu sebelumnya.
-
-## Skema database
-
-Sembilan tabel, dengan tiga yang jarang ada di project serupa: `ocr_runs` (menyimpan hasil tiap percobaan engine dan konfigurasi preprocessing), `ground_truth` (jawaban benar untuk evaluasi), dan `corrections` (apa yang diubah user, berguna untuk analisis kegagalan). Nominal disimpan sebagai integer rupiah supaya tidak ada masalah pembulatan float.
+The following schema must match `api/prisma/schema.prisma` exactly:
 
 ```prisma
-enum Role { USER ADMIN }
-enum ReceiptStatus { UPLOADED PROCESSING NEEDS_REVIEW CONFIRMED FAILED }
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReceiptStatus {
+  UPLOADED
+  PROCESSING
+  NEEDS_REVIEW
+  CONFIRMED
+  FAILED
+}
 
 model User {
   id           String     @id @default(uuid())
@@ -102,7 +138,7 @@ model RefreshToken {
 
 model Category {
   id       Int           @id @default(autoincrement())
-  userId   String?       // null = kategori bawaan
+  userId   String?
   name     String
   keywords String[]
   user     User?         @relation(fields: [userId], references: [id])
@@ -116,11 +152,11 @@ model Receipt {
   id            String        @id @default(uuid())
   userId        String
   imagePath     String
-  imageHash     String?       // perceptual hash, hex; dihitung worker setelah upload
+  imageHash     String?
   status        ReceiptStatus @default(UPLOADED)
   merchantName  String?
   purchaseDate  DateTime?     @db.Date
-  totalAmount   Int?          // rupiah
+  totalAmount   Int?
   categoryId    Int?
   ocrConfidence Float?
   rawText       String?
@@ -142,14 +178,14 @@ model Receipt {
 }
 
 model ReceiptItem {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   receiptId  String
   name       String
-  qty        Float    @default(1)
+  qty        Float     @default(1)
   unitPrice  Int?
   lineTotal  Int
   categoryId Int?
-  receipt    Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  receipt    Receipt   @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   category   Category? @relation(fields: [categoryId], references: [id])
   @@index([receiptId])
 }
@@ -157,10 +193,10 @@ model ReceiptItem {
 model OcrRun {
   id               String   @id @default(uuid())
   receiptId        String
-  engine           String   // tesseract | paddleocr
+  engine           String
   preprocessConfig Json
   rawText          String
-  fields           Json     // merchant, date, total, items + confidence per field
+  fields           Json
   durationMs       Int
   createdAt        DateTime @default(now())
   receipt          Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
@@ -174,7 +210,7 @@ model GroundTruth {
   purchaseDate DateTime @db.Date
   totalAmount  Int
   items        Json?
-  split        String   // dev | test
+  split        String
   receipt      Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
 }
 
@@ -193,7 +229,7 @@ model Budget {
   id          String   @id @default(uuid())
   userId      String
   categoryId  Int
-  month       DateTime @db.Date  // hari pertama bulan
+  month       DateTime @db.Date
   limitAmount Int
   user        User     @relation(fields: [userId], references: [id])
   category    Category @relation(fields: [categoryId], references: [id])
@@ -201,75 +237,96 @@ model Budget {
 }
 ```
 
-Dua hal yang tidak bisa ditulis di Prisma dan perlu migrasi SQL manual:
+The `GroundTruth` model is retained in the schema. It is removed in the evaluation harness feature, meaning it is not used by or exposed through HTTP evaluation endpoints.
 
-- `CREATE EXTENSION pg_trgm;` lalu indeks GIN trigram pada `merchantName` untuk fuzzy match duplikat
-- Duplikat sengaja **tidak** diblokir dengan constraint unik. Struk yang mirip hanya ditandai lewat `duplicateOfId`, karena dua pembelian kopi yang sama di hari yang sama itu sah, dan user yang memutuskan lewat review.
+PostgreSQL additionally requires:
 
-## Daftar endpoint
+- The `pg_trgm` extension.
+- A GIN trigram index on `Receipt.merchantName` for fuzzy matching.
+- No unique constraint for visually or textually similar receipts.
 
-Dua service: **Express** (publik, prefix `/api/v1`, semua selain auth memakai JWT) dan **FastAPI** (internal, hanya bisa diakses dari jaringan Docker oleh Express). Format error seragam: `{"error":{"code":"...","message":"...","details":{}}}`.
+Duplicates are indicated through `duplicateOfId`; two valid purchases on the same day remain separate receipts.
 
-### Express API
+## Express API
 
-| Method | Path | Fungsi | Respons |
+Express routes use the `/api/v1` prefix. `/health` is a root-level health endpoint. Routes listed below are relative to `/api/v1` unless otherwise noted.
+
+| Method | Path | Function | Success response |
 | --- | --- | --- | --- |
-| POST | `/auth/register` | Daftar akun | 201 |
-| POST | `/auth/login` | Login, kembalikan access + refresh token | 200 |
-| POST | `/auth/refresh` | Tukar refresh token | 200 |
-| GET | `/auth/me` | Profil user saat ini | 200 |
-| POST | `/receipts` | Unggah foto (multipart, maks 10 MB, jpg/png saja); buat struk `UPLOADED` | 202 `{id, status}` |
-| GET | `/receipts` | Daftar struk; filter `status`, `from`, `to`, `categoryId`, `q`, paginasi | 200 |
-| GET | `/receipts/:id` | Detail: field, item, peringatan validasi, info duplikat | 200 |
-| GET | `/receipts/:id/image` | Gambar asli (`?processed=true` untuk hasil preprocessing) | 200 |
-| PATCH | `/receipts/:id` | Koreksi field; perubahan dicatat ke `corrections` | 200 |
-| PUT | `/receipts/:id/items` | Ganti seluruh daftar item | 200 |
-| POST | `/receipts/:id/confirm` | Konfirmasi; ditolak jika validasi gagal | 200 |
-| POST | `/receipts/:id/reprocess` | Ulangi OCR dengan `engine` atau opsi preprocessing lain | 202 |
-| POST | `/receipts/:id/resolve-duplicate` | Body `{action: "keep" \| "discard"}` | 200 |
-| DELETE | `/receipts/:id` | Hapus struk beserta gambarnya | 204 |
-| GET | `/categories` | Kategori bawaan + milik user | 200 |
-| POST | `/categories` | Buat kategori dengan `keywords` | 201 |
-| PATCH | `/categories/:id` | Ubah nama atau kata kunci | 200 |
-| DELETE | `/categories/:id` | Hapus kategori milik user | 204 |
-| GET | `/analytics/summary` | Total, jumlah struk, rata-rata per bulan (`?month=`) | 200 |
-| GET | `/analytics/by-category` | Pengeluaran per kategori (`from`, `to`) | 200 |
-| GET | `/analytics/trend` | Deret waktu (`granularity=week\|month`) | 200 |
-| GET | `/analytics/top-merchants` | Merchant dengan pengeluaran terbesar | 200 |
-| GET | `/budgets` | Anggaran bulan tertentu beserta realisasi | 200 |
-| PUT | `/budgets` | Atur anggaran per kategori | 200 |
-| GET | `/export/receipts.csv` | Ekspor struk terkonfirmasi | 200 |
+| POST | `/auth/register` | Register an account | `201` |
+| POST | `/auth/login` | Log in and return tokens | `200` |
+| POST | `/auth/refresh` | Rotate a refresh token | `200` |
+| GET | `/auth/me` | Get the authenticated profile | `200` |
+| POST | `/receipts` | Upload a JPG or PNG, maximum 10 MB | `202 {id,status}` |
+| GET | `/receipts` | List receipts with filters and pagination | `200` |
+| GET | `/receipts/:id` | Get receipt fields, items, warnings, and duplicate information | `200` |
+| GET | `/receipts/:id/image` | Get the original image; `?processed=true` gets the processed image | `200` |
+| PATCH | `/receipts/:id` | Correct receipt fields and record corrections | `200` |
+| PUT | `/receipts/:id/items` | Replace the full item list | `200` |
+| POST | `/receipts/:id/confirm` | Confirm a receipt if validation passes | `200` |
+| POST | `/receipts/:id/reprocess` | Re-run OCR with an engine or preprocessing options | `202` |
+| POST | `/receipts/:id/resolve-duplicate` | Apply `{action:"keep"\|"discard"}` | `200` |
+| DELETE | `/receipts/:id` | Delete a receipt and its image files | `204` |
+| GET | `/categories` | List default and user categories | `200` |
+| POST | `/categories` | Create a category with keywords | `201` |
+| PATCH | `/categories/:id` | Update category name or keywords | `200` |
+| DELETE | `/categories/:id` | Delete a user category | `204` |
+| GET | `/analytics/summary` | Return totals and monthly averages | `200` |
+| GET | `/analytics/by-category` | Return spending per category for a date range | `200` |
+| GET | `/analytics/trend` | Return a weekly or monthly time series | `200` |
+| GET | `/analytics/top-merchants` | Return merchants with the highest spending | `200` |
+| GET | `/budgets` | Return budgets and realized spending for a month | `200` |
+| PUT | `/budgets` | Set a category budget | `200` |
+| GET | `/export/receipts.csv` | Export confirmed receipts | `200` |
+| GET | `/health` | Health check | `200 {status:"ok"}` |
 
-Endpoint auth menerima dan mengembalikan JSON. Register memakai body
-`{ "email", "password", "name" }`, login memakai `{ "email", "password" }`,
-dan refresh memakai `{ "refreshToken" }`. Register mengembalikan HTTP 201;
-login dan refresh mengembalikan HTTP 200 dengan `{ "user", "accessToken",
-"refreshToken" }`. Access token adalah JWT yang berlaku 15 menit. Refresh
-token adalah nilai acak 256-bit yang hanya disimpan sebagai SHA-256 hash,
-berlaku 7 hari, dan dirotasi pada setiap refresh. Pemakaian ulang refresh
-token yang sudah dicabut mencabut semua refresh token milik user tersebut.
-`GET /auth/me` memerlukan header `Authorization: Bearer <accessToken>` dan
-mengembalikan `{ "user" }`.
+Auth request bodies:
 
-### Endpoint evaluasi (role ADMIN)
+- Register: `{"email","password","name"}`
+- Login: `{"email","password"}`
+- Refresh: `{"refreshToken"}`
 
-| Method | Path | Fungsi |
+Register, login, and refresh return a user and tokens:
+
+```json
+{"user":{},"accessToken":"...","refreshToken":"..."}
+```
+
+- Access tokens are JWTs valid for 15 minutes.
+- Refresh tokens are random 256-bit values stored only as SHA-256 hashes.
+- Refresh tokens are valid for 7 days and rotate on every refresh.
+- Reusing a revoked refresh token revokes every refresh token belonging to that user.
+- Protected endpoints require `Authorization: Bearer <accessToken>`.
+- `GET /auth/me` returns `{"user":{}}`.
+
+Error format:
+
+```json
+{
+  "requestId": "uuid",
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Safe public message",
+    "details": {}
+  }
+}
+```
+
+The global error handler is the only place that formats errors. It handles `AppError`, Zod validation, Multer upload errors, and Prisma known errors. Unexpected errors produce a generic 500 response and are logged with the request ID.
+
+## FastAPI internal API
+
+FastAPI is reachable only through the internal Docker network and is called by Express.
+
+| Method | Path | Function |
 | --- | --- | --- |
-| PUT | `/receipts/:id/ground-truth` | Simpan jawaban benar dan split `dev` atau `test` |
-| POST | `/eval/run` | Jalankan evaluasi untuk satu konfigurasi `{engine, preprocess}` |
-| GET | `/eval/report` | Metrik per konfigurasi, siap disalin ke README |
+| POST | `/ocr/extract` | Extract raw text and fields from an image |
+| POST | `/ocr/preprocess` | Debug endpoint for a preprocessed image |
+| POST | `/image/phash` | Calculate a perceptual image hash |
+| POST | `/category/predict` | Predict a category and score for item text |
+| GET | `/health` | Return service health and loaded engines |
 
-### FastAPI OCR service (internal)
-
-| Method | Path | Fungsi |
-| --- | --- | --- |
-| POST | `/ocr/extract` | Gambar + `engine` + `preprocess` menghasilkan teks mentah, field, dan confidence |
-| POST | `/ocr/preprocess` | Mode debug: kembalikan gambar hasil preprocessing |
-| POST | `/image/phash` | Hitung perceptual hash gambar |
-| POST | `/category/predict` | Teks item menghasilkan kategori + skor (minggu 4) |
-| GET | `/health` | Cek hidup, termasuk engine mana yang termuat |
-
-Bentuk respons `/ocr/extract`, supaya Express dan parser punya kontrak yang jelas:
+The `/ocr/extract` response contract is:
 
 ```json
 {
@@ -277,90 +334,54 @@ Bentuk respons `/ocr/extract`, supaya Express dan parser punya kontrak yang jela
   "durationMs": 1840,
   "rawText": "INDOMARET\n...",
   "fields": {
-    "merchant": { "value": "INDOMARET", "confidence": 0.93 },
-    "date": { "value": "2026-11-08", "confidence": 0.88 },
-    "total": { "value": 47500, "confidence": 0.71 },
+    "merchant": {"value": "INDOMARET", "confidence": 0.93},
+    "date": {"value": "2026-11-08", "confidence": 0.88},
+    "total": {"value": 47500, "confidence": 0.71},
     "items": [
-      { "name": "AQUA 600ML", "qty": 2, "lineTotal": 7000, "confidence": 0.80 }
+      {"name": "AQUA 600ML", "qty": 2, "lineTotal": 7000, "confidence": 0.80}
     ]
   },
   "warnings": ["total_not_equal_item_sum"]
 }
 ```
 
-## Pipeline OCR dan evaluasi
+## Validation rules
 
-Bagian ini yang membedakan SpendWise dari demo OCR biasa: setiap keputusan teknis dibuktikan dengan angka dari dataset berlabel.
+An extracted receipt produces warnings and may enter `NEEDS_REVIEW`:
 
-### Pipeline per struk
-
-1. **Preprocessing (OpenCV):** resize ke lebar tetap, grayscale, denoise, deteksi tepi kertas untuk perspective crop, deskew, lalu adaptive threshold. Tiap langkah bisa dimatikan lewat konfigurasi supaya efeknya terukur terpisah.
-2. **OCR:** Tesseract (bahasa `ind+eng`, mode halaman tunggal) dan PaddleOCR, keduanya lewat antarmuka yang sama.
-3. **Parsing:** merchant dari beberapa baris teratas, tanggal dengan beberapa pola format, total dari baris berkata kunci (TOTAL, JUMLAH, GRAND TOTAL), item dari baris berpola nama + qty + harga.
-4. **Validasi:** aturan di tabel bawah. Hasilnya `warnings` yang menentukan apakah struk masuk `NEEDS_REVIEW`.
-5. **Duplikat:** hash gambar mirip (jarak Hamming kecil) atau kombinasi merchant mirip + tanggal sama + nominal sama.
-6. **Kategori:** aturan kata kunci dulu, lalu model klasifikasi sebagai pembanding.
-
-| Aturan validasi | Tindakan jika gagal |
+| Rule | Failure behavior |
 | --- | --- |
-| Total sama dengan jumlah `lineTotal` item (toleransi pembulatan kecil) | Peringatan, wajib review |
-| Tanggal bukan di masa depan dan tidak lebih dari 2 tahun lalu | Peringatan, wajib review |
-| Total lebih dari 0 dan masuk akal (batas atas bisa diatur) | Peringatan, wajib review |
-| Merchant tidak kosong | Peringatan |
-| Confidence field di bawah ambang | Field disorot di layar review |
+| Item `lineTotal` values sum to `totalAmount`, with a small rounding tolerance | Add a warning and require review |
+| Purchase date is not in the future and is not more than two years old | Add a warning and require review |
+| Total is greater than zero and within the configured reasonable upper bound | Add a warning and require review |
+| Merchant name is not empty | Add a warning |
+| Field confidence is below the configured threshold | Highlight the field for review |
 
-### Dataset dan metrik
+The duplicate check compares a perceptual image hash and a combination of merchant similarity, purchase date, and total. Similar receipts are marked, not blocked.
 
-- **Dataset:** 50 struk nyata dengan kondisi bervariasi. 30 untuk `dev` (boleh dipakai menyetel parser) dan 20 untuk `test` (hanya dipakai sekali di akhir). Tanpa pemisahan ini angka akhir terlalu optimis.
-- **Akurasi per field:** total (cocok persis), tanggal (cocok persis), merchant (kemiripan teks di atas ambang, misalnya 0,8).
-- **Character error rate** pada teks mentah untuk 10 struk yang kamu ketik ulang penuh.
-- **Waktu per struk** (median) dan **persentase struk yang masuk `NEEDS_REVIEW`**.
-- **Duplikat:** buat 10 pasang duplikat (foto ulang, crop berbeda, screenshot) dan 10 pasang bukan duplikat, lalu hitung precision dan recall.
-- **Kategori:** label sekitar 150 transaksi; bandingkan akurasi dan macro-F1 aturan kata kunci dengan TF-IDF + Logistic Regression.
+## OCR pipeline
 
-Tabel yang diisi dari `eval/report` dan ditaruh di README (kolom angka diisi setelah eval script jalan):
+1. Resize the image to a fixed working width.
+2. Convert to grayscale.
+3. Denoise.
+4. Detect the document edge and crop the perspective.
+5. Deskew.
+6. Apply adaptive thresholding.
+7. Run Tesseract or PaddleOCR through the common OCR interface.
+8. Parse merchant, purchase date, total, and item rows.
+9. Validate fields and calculate warnings.
+10. Check duplicate hashes and fuzzy merchant matches.
+11. Apply rule-based categorization, with a classification model as a later comparison.
 
-| Konfigurasi | Total benar | Tanggal benar | Merchant benar | Waktu per struk |
-| --- | --- | --- | --- | --- |
-| Tesseract, tanpa preprocessing |  |  |  |  |
-| Tesseract + preprocessing |  |  |  |  |
-| PaddleOCR + preprocessing |  |  |  |  |
-| Engine terbaik + validasi dan koreksi user |  |  |  |  |
+Each preprocessing step can be disabled independently. OCR engines and preprocessing options remain an explicit configuration contract.
 
-Tambahkan satu bagian **analisis kegagalan** di README: kelompokkan 3-5 penyebab salah baca terbanyak (struk thermal pudar, lipatan, bayangan, font kecil) beserta contoh gambarnya dan apa yang kamu coba untuk memperbaikinya.
+Evaluation uses a CLI, not HTTP endpoints. The test data must be split into 30 development receipts and 20 test receipts. The test split is used once for final evaluation.
 
-## Risiko dan pemotongan scope
+The evaluation CLI reports:
 
-Risiko terbesarnya bukan teknis, tapi waktu yang terbagi dengan TA. Karena itu urutan pemotongan sudah ditentukan dari awal: evaluasi dan layar review tidak boleh dipotong, fitur lain boleh.
-
-| Risiko | Penanganan |
-| --- | --- |
-| Struk thermal pudar atau kusut membuat OCR buruk | Preprocessing + layar review; laporkan angka apa adanya dan jadikan bahan analisis kegagalan, jangan kejar 100% |
-| Format struk terlalu beragam untuk parser | Mulai dari 3 jenis merchant paling umum (minimarket, restoran, SPBU), baru digeneralisasi di akhir |
-| PaddleOCR berat dipasang di Docker | Jalankan di image terpisah; fallback ke Tesseract jika gagal |
-| OCR lambat membuat upload terasa macet | Respons 202 langsung, proses di worker, UI polling status |
-| Foto struk memuat data pribadi (nama, nomor kartu, nomor HP) | Dataset masuk `.gitignore`; di repo publik hanya sampel anonim atau sintetis |
-| Waktu mepet | Potong dengan urutan di bawah |
-
-Urutan pemotongan bila waktu mepet, dari yang dipotong pertama:
-
-1. Ekspor CSV
-2. Anggaran per kategori
-3. Klasifikasi kategori berbasis model (cukup aturan kata kunci)
-4. PaddleOCR (cukup Tesseract, tapi bandingkan dua konfigurasi preprocessing)
-
-Yang tidak dipotong: preprocessing, validasi, layar review, deteksi duplikat dasar, dan tabel evaluasi.
-
-## Checklist selesai
-
-Project dianggap selesai bila semua ini terpenuhi.
-
-- [ ] `docker compose up` menjalankan semua service dari repo bersih
-- [ ] 50 struk berlabel dan eval script yang bisa dijalankan ulang dengan satu perintah
-- [ ] Tabel evaluasi di README dengan perbandingan sebelum dan sesudah preprocessing
-- [ ] Layar review dan deteksi duplikat bisa didemokan dari awal sampai akhir
-- [ ] Dashboard analitik menampilkan data struk asli
-- [ ] Test untuk parser, validasi, dan duplikat
-- [ ] README memuat arsitektur, keputusan dan trade-off, analisis kegagalan, dan satu hal yang gagal atau kamu ubah di tengah jalan
-- [ ] Demo GIF atau video 60-90 detik
-- [ ] Tidak ada foto struk pribadi yang ter-commit
+- Exact accuracy for total, date, and merchant.
+- Character error rate on repeated raw-text samples.
+- Median processing time.
+- Percentage of receipts requiring review.
+- Duplicate precision and recall.
+- Category accuracy and macro-F1 when the classification model is implemented.
