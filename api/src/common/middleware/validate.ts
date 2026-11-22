@@ -8,7 +8,8 @@ type ValidationSchemas = {
   params?: ZodType;
 };
 
-export const validate = (schemas: ValidationSchemas): RequestHandler =>
+export const validate =
+  (schemas: ValidationSchemas): RequestHandler =>
   (request, response, next) => {
     const parsed: { body?: unknown; query?: unknown; params?: unknown } = {};
 
