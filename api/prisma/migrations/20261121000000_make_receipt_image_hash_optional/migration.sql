@@ -1,0 +1,1 @@
+ALTER TABLE "Receipt" ALTER COLUMN "imageHash" DROP NOT NULL;

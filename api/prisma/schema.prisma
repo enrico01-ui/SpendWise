@@ -60,7 +60,7 @@ model Receipt {
   id            String        @id @default(uuid())
   userId        String
   imagePath     String
-  imageHash     String
+  imageHash     String?
   status        ReceiptStatus @default(UPLOADED)
   merchantName  String?
   purchaseDate  DateTime?     @db.Date
