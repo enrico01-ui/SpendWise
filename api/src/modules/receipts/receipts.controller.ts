@@ -1,17 +1,27 @@
 import type { RequestHandler } from "express";
 import { getAuthUser } from "../../common/middleware/require-auth.js";
-import { getValidatedParams, getValidatedQuery } from "../../common/middleware/validate.js";
-import type { ListReceiptsQuery, ReceiptIdParams, ReceiptImageQuery } from "./receipts.schemas.js";
+import {
+  getValidatedParams,
+  getValidatedQuery,
+} from "../../common/middleware/validate.js";
+import type {
+  ListReceiptsQuery,
+  ReceiptIdParams,
+  ReceiptImageQuery,
+} from "./receipts.schemas.js";
 import * as receiptService from "./receipts.service.js";
 
 export const uploadReceipt: RequestHandler = async (request, response) => {
   const user = getAuthUser(request);
-  if (!request.file) throw new Error("Upload middleware did not provide a file");
+  if (!request.file)
+    throw new Error("Upload middleware did not provide a file");
   const extension = request.file.buffer[0] === 0xff ? "jpg" : "png";
-  response.status(202).json(await receiptService.uploadReceipt(user.id, {
-    buffer: request.file.buffer,
-    extension
-  }));
+  response.status(202).json(
+    await receiptService.uploadReceipt(user.id, {
+      buffer: request.file.buffer,
+      extension,
+    }),
+  );
 };
 
 export const listReceipts: RequestHandler = async (request, response) => {
@@ -30,7 +40,11 @@ export const getReceiptImage: RequestHandler = async (request, response) => {
   const user = getAuthUser(request);
   const params = getValidatedParams<ReceiptIdParams>(response);
   const query = getValidatedQuery<ReceiptImageQuery>(response);
-  const imagePath = await receiptService.getReceiptImage(user.id, params.id, query.processed ?? false);
+  const imagePath = await receiptService.getReceiptImage(
+    user.id,
+    params.id,
+    query.processed ?? false,
+  );
   response.sendFile(imagePath);
 };
 

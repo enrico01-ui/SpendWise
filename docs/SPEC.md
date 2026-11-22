@@ -68,6 +68,8 @@ Rules:
 | Authentication | JWT access and refresh tokens, bcrypt |
 | OCR service | Python 3.11, FastAPI, OpenCV, Tesseract, PaddleOCR |
 | Infrastructure | Docker Compose |
+| HTTP security | Helmet, explicit CORS allowlist, express-rate-limit |
+| Logging | Pino and pino-http |
 | API tests | Vitest and Supertest |
 | OCR tests | pytest |
 
@@ -279,6 +281,7 @@ Express routes use the `/api/v1` prefix. `/health` is a root-level health endpoi
 | PUT | `/budgets` | Set a category budget | `200` |
 | GET | `/export/receipts.csv` | Export confirmed receipts | `200` |
 | GET | `/health` | Health check | `200 {status:"ok"}` |
+| GET | `/health/ready` | Database readiness check | `200 {status:"ready"}` or `503` |
 
 Auth request bodies:
 
@@ -313,6 +316,18 @@ Error format:
 ```
 
 The global error handler is the only place that formats errors. It handles `AppError`, Zod validation, Multer upload errors, and Prisma known errors. Unexpected errors produce a generic 500 response and are logged with the request ID.
+
+HTTP hardening:
+
+- Helmet sets security headers and Express disables the `x-powered-by` header.
+- JSON request bodies are limited to 100 KB.
+- CORS origins come from `CORS_ORIGINS` as a comma-separated allowlist. Wildcards are not allowed.
+- Login and registration share a bucket limited to 10 requests per 15 minutes per IP by default. Refresh has a separate bucket with the same default window.
+- Limits and the window are configurable through `AUTH_LOGIN_REGISTER_LIMIT`, `AUTH_REFRESH_LIMIT`, and `AUTH_RATE_LIMIT_WINDOW_MS`.
+- Auth endpoints return HTTP 429 in the standard error format when limited.
+- The default rate-limit store is in-memory and process-local. A shared store is required when multiple API instances run.
+- Pino logs HTTP requests and application errors. Authorization and password fields are redacted, and request logs include the request ID.
+- `LOG_LEVEL` controls Pino logging.
 
 ## FastAPI internal API
 

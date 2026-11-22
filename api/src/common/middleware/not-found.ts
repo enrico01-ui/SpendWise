@@ -6,7 +6,7 @@ export const notFound: RequestHandler = (request, response) => {
     error: {
       code: "NOT_FOUND",
       message: "Route not found",
-      details: {}
-    }
+      details: {},
+    },
   });
 };

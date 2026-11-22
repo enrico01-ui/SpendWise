@@ -5,7 +5,7 @@ export const receiptStatusSchema = z.enum([
   "PROCESSING",
   "NEEDS_REVIEW",
   "CONFIRMED",
-  "FAILED"
+  "FAILED",
 ]);
 
 const isoDate = z.string().refine((value) => {
@@ -17,24 +17,43 @@ const isoDate = z.string().refine((value) => {
 
 export const listReceiptsQuerySchema = z.object({
   status: receiptStatusSchema.optional(),
-  from: isoDate.optional().transform((value) => value ? new Date(
-    /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00.000Z` : value
-  ) : undefined),
-  to: isoDate.optional().transform((value) => value ? new Date(
-    /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T23:59:59.999Z` : value
-  ) : undefined),
+  from: isoDate
+    .optional()
+    .transform((value) =>
+      value
+        ? new Date(
+            /^\d{4}-\d{2}-\d{2}$/.test(value)
+              ? `${value}T00:00:00.000Z`
+              : value,
+          )
+        : undefined,
+    ),
+  to: isoDate
+    .optional()
+    .transform((value) =>
+      value
+        ? new Date(
+            /^\d{4}-\d{2}-\d{2}$/.test(value)
+              ? `${value}T23:59:59.999Z`
+              : value,
+          )
+        : undefined,
+    ),
   categoryId: z.coerce.number().int().positive().optional(),
   q: z.string().trim().min(1).max(200).optional(),
   page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().positive().max(50).default(20)
+  pageSize: z.coerce.number().int().positive().max(50).default(20),
 });
 
 export const receiptIdParamsSchema = z.object({
-  id: z.union([z.uuid(), z.literal("other-user-receipt")])
+  id: z.union([z.uuid(), z.literal("other-user-receipt")]),
 });
 
 export const receiptImageQuerySchema = z.object({
-  processed: z.enum(["true", "false"]).optional().transform((value) => value === "true")
+  processed: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true"),
 });
 
 export type ListReceiptsQuery = z.infer<typeof listReceiptsQuerySchema>;

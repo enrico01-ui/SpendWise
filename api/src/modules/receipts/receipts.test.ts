@@ -7,7 +7,7 @@ const auth = vi.hoisted(() => ({
   register: vi.fn(),
   login: vi.fn(),
   refresh: vi.fn(),
-  getUser: vi.fn()
+  getUser: vi.fn(),
 }));
 
 const receipts = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ const receipts = vi.hoisted(() => ({
   listReceipts: vi.fn(),
   getReceipt: vi.fn(),
   getReceiptImage: vi.fn(),
-  deleteReceipt: vi.fn()
+  deleteReceipt: vi.fn(),
 }));
 
 vi.mock("../auth/auth.service.js", () => auth);
@@ -24,6 +24,12 @@ vi.mock("./receipts.service.js", () => receipts);
 import { createApp } from "../../app.js";
 
 const app = createApp();
+
+type ErrorBody = {
+  error: {
+    code: string;
+  };
+};
 
 const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -35,12 +41,18 @@ describe("receipt routes", () => {
   });
 
   it("uploads a valid JPEG and returns 202", async () => {
-    receipts.uploadReceipt.mockResolvedValue({ id: "receipt-1", status: "UPLOADED" });
+    receipts.uploadReceipt.mockResolvedValue({
+      id: "receipt-1",
+      status: "UPLOADED",
+    });
 
     const response = await request(app)
       .post("/api/v1/receipts")
       .set("Authorization", "Bearer valid")
-      .attach("file", jpeg, { filename: "receipt.jpg", contentType: "image/jpeg" });
+      .attach("file", jpeg, {
+        filename: "receipt.jpg",
+        contentType: "image/jpeg",
+      });
 
     expect(response.status).toBe(202);
     expect(response.body).toEqual({ id: "receipt-1", status: "UPLOADED" });
@@ -52,7 +64,7 @@ describe("receipt routes", () => {
       .set("Authorization", "Bearer valid")
       .attach("file", Buffer.from("not an image"), {
         filename: "receipt.txt",
-        contentType: "text/plain"
+        contentType: "text/plain",
       });
 
     expect(response.status).toBe(415);
@@ -64,7 +76,7 @@ describe("receipt routes", () => {
       .set("Authorization", "Bearer valid")
       .attach("file", Buffer.from("plain text"), {
         filename: "receipt.jpg",
-        contentType: "image/jpeg"
+        contentType: "image/jpeg",
       });
 
     expect(response.status).toBe(415);
@@ -76,7 +88,7 @@ describe("receipt routes", () => {
       .set("Authorization", "Bearer valid")
       .attach("file", Buffer.alloc(10 * 1024 * 1024 + 1), {
         filename: "large.png",
-        contentType: "image/png"
+        contentType: "image/png",
       });
 
     expect(response.status).toBe(413);
@@ -87,7 +99,7 @@ describe("receipt routes", () => {
       items: [{ id: "receipt-1" }],
       page: 2,
       pageSize: 10,
-      total: 11
+      total: 11,
     });
 
     const response = await request(app)
@@ -99,7 +111,7 @@ describe("receipt routes", () => {
         categoryId: 3,
         q: "Market",
         page: 2,
-        pageSize: 10
+        pageSize: 10,
       })
       .set("Authorization", "Bearer valid");
 
@@ -108,7 +120,7 @@ describe("receipt routes", () => {
       items: [{ id: "receipt-1" }],
       page: 2,
       pageSize: 10,
-      total: 11
+      total: 11,
     });
     expect(receipts.listReceipts).toHaveBeenCalledWith(
       "user-1",
@@ -117,14 +129,14 @@ describe("receipt routes", () => {
         categoryId: 3,
         q: "Market",
         page: 2,
-        pageSize: 10
-      })
+        pageSize: 10,
+      }),
     );
   });
 
   it("returns 404 for another user's receipt", async () => {
     receipts.getReceipt.mockRejectedValue(
-      new AppError(404, "RECEIPT_NOT_FOUND", "Receipt not found")
+      new AppError(404, "RECEIPT_NOT_FOUND", "Receipt not found"),
     );
 
     const response = await request(app)
@@ -132,15 +144,23 @@ describe("receipt routes", () => {
       .set("Authorization", "Bearer valid");
 
     expect(response.status).toBe(404);
-    expect(response.body.error.code).toBe("RECEIPT_NOT_FOUND");
+    expect((response.body as unknown as ErrorBody).error.code).toBe(
+      "RECEIPT_NOT_FOUND",
+    );
   });
 
   it("accepts valid PNG magic bytes", async () => {
-    receipts.uploadReceipt.mockResolvedValue({ id: "receipt-png", status: "UPLOADED" });
+    receipts.uploadReceipt.mockResolvedValue({
+      id: "receipt-png",
+      status: "UPLOADED",
+    });
     const response = await request(app)
       .post("/api/v1/receipts")
       .set("Authorization", "Bearer valid")
-      .attach("file", png, { filename: "receipt.png", contentType: "image/png" });
+      .attach("file", png, {
+        filename: "receipt.png",
+        contentType: "image/png",
+      });
     expect(response.status).toBe(202);
   });
 });
