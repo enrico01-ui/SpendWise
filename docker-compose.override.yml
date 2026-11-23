@@ -9,6 +9,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://spendwise:spendwise@db:5432/spendwise?schema=public}
       API_PORT: 3000
+      OCR_URL: ${OCR_URL:-http://ocr:8000}
+      WORKER_ENABLED: ${WORKER_ENABLED:-true}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-development-32-chars}
     ports:

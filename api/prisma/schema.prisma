@@ -62,6 +62,9 @@ model Receipt {
   imagePath     String
   imageHash     String?
   status        ReceiptStatus @default(UPLOADED)
+  processingAttempts Int       @default(0)
+  nextAttemptAt DateTime?
+  lastError     String?
   merchantName  String?
   purchaseDate  DateTime?     @db.Date
   totalAmount   Int?

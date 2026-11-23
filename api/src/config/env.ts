@@ -9,6 +9,23 @@ const envSchema = z
       .enum(["development", "test", "production"])
       .default("development"),
     UPLOAD_DIR: z.string().min(1).default("uploads"),
+    WORKER_ENABLED: z.coerce.boolean().default(false),
+    WORKER_POLL_MS: z.coerce.number().int().positive().default(2000),
+    WORKER_RECOVERY_INTERVAL_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(60 * 1000),
+    WORKER_STUCK_AFTER_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(5 * 60 * 1000),
+    WORKER_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
+    WORKER_RETRY_BASE_MS: z.coerce.number().int().positive().default(5000),
+    WORKER_RETRY_FACTOR: z.coerce.number().positive().default(4),
+    OCR_URL: z.string().url().default("http://ocr:8000"),
+    OCR_DEFAULT_ENGINE: z.string().min(1).default("tesseract"),
     CORS_ORIGINS: z.string().default(""),
     AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
       .number()

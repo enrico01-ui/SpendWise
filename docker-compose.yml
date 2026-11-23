@@ -20,6 +20,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       API_PORT: 3000
       OCR_URL: http://ocr:8000
+      WORKER_ENABLED: "true"
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "${API_HOST_PORT}:3000"
