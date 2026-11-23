@@ -156,6 +156,9 @@ model Receipt {
   imagePath     String
   imageHash     String?
   status        ReceiptStatus @default(UPLOADED)
+  processingAttempts Int       @default(0)
+  nextAttemptAt DateTime?
+  lastError     String?
   merchantName  String?
   purchaseDate  DateTime?     @db.Date
   totalAmount   Int?
@@ -376,13 +379,22 @@ The duplicate check compares a perceptual image hash and a combination of mercha
 
 ## OCR pipeline
 
-1. Resize the image to a fixed working width.
-2. Convert to grayscale.
-3. Denoise.
-4. Detect the document edge and crop the perspective.
-5. Deskew.
-6. Apply adaptive thresholding.
-7. Run Tesseract or PaddleOCR through the common OCR interface.
+The API worker polls uploaded receipts when `WORKER_ENABLED=true`. It claims one
+eligible receipt at a time with a PostgreSQL `FOR UPDATE SKIP LOCKED` statement,
+marks it `PROCESSING`, calls the internal OCR service, stores the `OcrRun`,
+updates the receipt and items, and then marks it `NEEDS_REVIEW`.
+
+The worker retries failures up to three attempts with configurable exponential
+backoff. The default delays are 5 seconds, 20 seconds, and 80 seconds; after
+the third failure the receipt is `FAILED`. At startup and every minute, receipts
+stuck in `PROCESSING` for more than five minutes are returned to `UPLOADED`.
+
+Worker settings are `WORKER_POLL_MS`, `OCR_URL`, `OCR_DEFAULT_ENGINE`,
+`WORKER_MAX_ATTEMPTS`, `WORKER_RETRY_BASE_MS`, `WORKER_RETRY_FACTOR`,
+`WORKER_RECOVERY_INTERVAL_MS`, and `WORKER_STUCK_AFTER_MS`.
+
+The OCR service itself supports preprocessing and the Tesseract/PaddleOCR engine
+interface. The worker currently sends an empty preprocessing configuration.
 8. Parse merchant, purchase date, total, and item rows.
 9. Validate fields and calculate warnings.
 10. Check duplicate hashes and fuzzy merchant matches.
