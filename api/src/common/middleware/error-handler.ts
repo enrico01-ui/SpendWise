@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import type { ErrorRequestHandler } from "express";
 import { AppError } from "../errors/app-error.js";
 import { logger } from "../logger.js";
+import { env } from "../../config/env.js";
 
 export const errorHandler: ErrorRequestHandler = (
   error,
@@ -15,6 +16,18 @@ export const errorHandler: ErrorRequestHandler = (
   const requestId = response.locals.requestId;
 
   if (error instanceof AppError) {
+    if (
+      error.code === "REFRESH_TOKEN_MISSING" ||
+      error.code === "INVALID_REFRESH_TOKEN" ||
+      error.code === "EXPIRED_REFRESH_TOKEN" ||
+      error.code === "REFRESH_TOKEN_REUSE"
+    ) {
+      const secure = env.COOKIE_SECURE ? "; Secure" : "";
+      response.setHeader(
+        "Set-Cookie",
+        `refresh_token=; HttpOnly; SameSite=Strict; Path=/api/v1/auth; Max-Age=0${secure}`,
+      );
+    }
     response.status(error.status).json({
       requestId,
       error: {

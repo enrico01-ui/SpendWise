@@ -6,6 +6,7 @@ const auth = vi.hoisted(() => ({
   register: vi.fn(),
   login: vi.fn(),
   refresh: vi.fn(),
+  revokeRefreshToken: vi.fn(),
   verifyAccessToken: vi.fn(),
   getUser: vi.fn(),
 }));
@@ -27,16 +28,12 @@ type AccessTokenBody = {
   accessToken: string;
 };
 
-type RefreshTokenBody = {
-  refreshToken: string;
-};
-
 describe("authentication routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("registers an account and returns tokens", async () => {
+  it("registers an account and sets an HttpOnly refresh cookie", async () => {
     auth.register.mockResolvedValue({
       user: {
         id: "user-1",
@@ -58,6 +55,13 @@ describe("authentication routes", () => {
     expect((response.body as unknown as AccessTokenBody).accessToken).toBe(
       "access",
     );
+    expect(response.body).not.toHaveProperty("refreshToken");
+    const cookie = response.headers["set-cookie"][0];
+    expect(cookie).toContain("refresh_token=refresh");
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("SameSite=Strict");
+    expect(cookie).toContain("Path=/api/v1/auth");
+    expect(cookie).toContain("Max-Age=604800");
   });
 
   it("returns 409 for a duplicate email", async () => {
@@ -93,7 +97,17 @@ describe("authentication routes", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns a rotated refresh token", async () => {
+  it("rotates the refresh cookie and does not return refreshToken", async () => {
+    auth.login.mockResolvedValue({
+      user: {
+        id: "user-1",
+        email: "user@example.com",
+        name: "User",
+        role: "USER",
+      },
+      accessToken: "access",
+      refreshToken: "refresh-1",
+    });
     auth.refresh.mockResolvedValue({
       user: {
         id: "user-1",
@@ -105,14 +119,28 @@ describe("authentication routes", () => {
       refreshToken: "refresh-2",
     });
 
-    const response = await request(app)
+    const agent = request.agent(app);
+    await agent
+      .post("/api/v1/auth/login")
+      .set("X-Requested-With", "fetch")
+      .send({ email: "user@example.com", password: "password123" });
+
+    const response = await agent
       .post("/api/v1/auth/refresh")
-      .send({ refreshToken: "refresh-1" });
+      .set("X-Requested-With", "fetch");
 
     expect(response.status).toBe(200);
-    expect((response.body as unknown as RefreshTokenBody).refreshToken).toBe(
-      "refresh-2",
-    );
+    expect(response.body).not.toHaveProperty("refreshToken");
+    expect(response.headers["set-cookie"][0]).toContain("refresh_token=refresh-2");
+    expect(auth.refresh).toHaveBeenCalled();
+  });
+
+  it("returns 401 without a refresh cookie", async () => {
+    const response = await request(app)
+      .post("/api/v1/auth/refresh")
+      .set("X-Requested-With", "fetch");
+    expect(response.status).toBe(401);
+    expect(response.headers["set-cookie"][0]).toContain("Max-Age=0");
   });
 
   it("returns 401 when a revoked refresh token is reused", async () => {
@@ -122,12 +150,39 @@ describe("authentication routes", () => {
 
     const response = await request(app)
       .post("/api/v1/auth/refresh")
-      .send({ refreshToken: "revoked" });
+      .set("X-Requested-With", "fetch")
+      .set("Cookie", "refresh_token=revoked");
 
     expect(response.status).toBe(401);
     expect((response.body as unknown as ErrorBody).error.code).toBe(
       "REFRESH_TOKEN_REUSE",
     );
+    expect(response.headers["set-cookie"][0]).toContain("Max-Age=0");
+  });
+
+  it("logs out, revokes the cookie token, and clears the cookie", async () => {
+    const response = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("X-Requested-With", "fetch")
+      .set("Cookie", "refresh_token=refresh");
+    expect(response.status).toBe(204);
+    expect(auth.revokeRefreshToken).toHaveBeenCalledWith("refresh");
+    expect(response.headers["set-cookie"][0]).toContain("Max-Age=0");
+  });
+
+  it("rejects refresh and logout without the CSRF header", async () => {
+    const refreshResponse = await request(app).post("/api/v1/auth/refresh");
+    expect(refreshResponse.status).toBe(403);
+    const logoutResponse = await request(app).post("/api/v1/auth/logout");
+    expect(logoutResponse.status).toBe(403);
+  });
+
+  it("rejects refresh and logout from a wrong Origin", async () => {
+    const refreshResponse = await request(app)
+      .post("/api/v1/auth/refresh")
+      .set("X-Requested-With", "fetch")
+      .set("Origin", "https://evil.example");
+    expect(refreshResponse.status).toBe(403);
   });
 
   it("rejects an expired access token and allows /auth/me with a valid token", async () => {

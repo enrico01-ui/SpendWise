@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { requireAuth } from "../../common/middleware/require-auth.js";
 import { validate } from "../../common/middleware/validate.js";
+import { requireCsrfHeader } from "../../common/middleware/csrf.js";
 import {
   loginRegisterRateLimit,
   refreshRateLimit,
 } from "../../common/middleware/rate-limit.js";
-import { login, getMe, refresh, register } from "./auth.controller.js";
-import { loginSchema, refreshSchema, registerSchema } from "./auth.schemas.js";
+import { login, getMe, logout, refresh, register } from "./auth.controller.js";
+import { loginSchema, registerSchema } from "./auth.schemas.js";
 
 export const authRouter = Router();
 
@@ -25,7 +26,8 @@ authRouter.post(
 authRouter.post(
   "/refresh",
   refreshRateLimit,
-  validate({ body: refreshSchema }),
+  requireCsrfHeader,
   refresh,
 );
+authRouter.post("/logout", requireCsrfHeader, logout);
 authRouter.get("/me", requireAuth, getMe);
