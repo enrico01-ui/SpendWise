@@ -109,8 +109,8 @@ describe("auth service security behavior", () => {
     );
 
     const results = await Promise.allSettled([
-      refresh({ refreshToken: "token-a" }),
-      refresh({ refreshToken: "token-a" }),
+      refresh("token-a"),
+      refresh("token-a"),
     ]);
 
     expect(

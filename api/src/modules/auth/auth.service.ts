@@ -16,7 +16,7 @@ import {
   REFRESH_TOKEN_CLEANUP_AGE_MS,
   JWT_ISSUER,
 } from "./auth.constants.js";
-import type { LoginDto, RegisterDto, RefreshDto } from "./auth.schemas.js";
+import type { LoginDto, RegisterDto } from "./auth.schemas.js";
 
 type PublicUser = Pick<User, "id" | "email" | "name" | "role">;
 
@@ -93,8 +93,8 @@ export const login = async (dto: LoginDto) => {
   return { user: toPublicUser(user), ...(await issueTokens(user)) };
 };
 
-export const refresh = async (dto: RefreshDto) => {
-  const tokenHash = hashRefreshToken(dto.refreshToken);
+export const refresh = async (refreshToken: string) => {
+  const tokenHash = hashRefreshToken(refreshToken);
   const result = await prisma.$transaction(async (transaction) => {
     const stored = await transaction.refreshToken.findUnique({
       where: { tokenHash },
@@ -188,6 +188,14 @@ export const getUser = async (id: string) => {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw new UnauthorizedError("User no longer exists");
   return toPublicUser(user);
+};
+
+export const revokeRefreshToken = async (refreshToken: string): Promise<void> => {
+  const tokenHash = hashRefreshToken(refreshToken);
+  await prisma.refreshToken.updateMany({
+    where: { tokenHash, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
 };
 
 export const cleanupExpiredOrRevokedRefreshTokens = async (

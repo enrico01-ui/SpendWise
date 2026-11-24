@@ -4,6 +4,8 @@ const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1),
     JWT_SECRET: z.string().optional(),
+    APP_ORIGIN: z.string().url().default("http://localhost:5173"),
+    COOKIE_SECURE: z.enum(["true", "false"]).optional(),
     API_PORT: z.coerce.number().int().positive().default(3000),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -26,7 +28,6 @@ const envSchema = z
     WORKER_RETRY_FACTOR: z.coerce.number().positive().default(4),
     OCR_URL: z.string().url().default("http://ocr:8000"),
     OCR_DEFAULT_ENGINE: z.string().min(1).default("tesseract"),
-    CORS_ORIGINS: z.string().default(""),
     AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
       .number()
       .int()
@@ -64,4 +65,10 @@ if (!result.success) {
 export const env = Object.freeze({
   ...result.data,
   JWT_SECRET: result.data.JWT_SECRET,
+  COOKIE_SECURE:
+    result.data.COOKIE_SECURE === "true"
+      ? true
+      : result.data.COOKIE_SECURE === "false"
+        ? false
+        : result.data.NODE_ENV === "production",
 });

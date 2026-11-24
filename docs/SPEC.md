@@ -17,6 +17,7 @@ Flow:
 Services communicate as follows:
 
 - React and Express use the public `/api/v1` HTTP contract.
+- Browser requests use same-origin proxies: Vite proxies `/api` in development and the web container proxies API traffic in Docker. CORS is disabled.
 - Express is the only public application API and manages authentication, receipts, categories, analytics, budgets, and exports.
 - Express calls FastAPI only over the internal Docker network.
 - PostgreSQL is the persistent database.
@@ -68,7 +69,7 @@ Rules:
 | Authentication | JWT access and refresh tokens, bcrypt |
 | OCR service | Python 3.11, FastAPI, OpenCV, Tesseract, PaddleOCR |
 | Infrastructure | Docker Compose |
-| HTTP security | Helmet, explicit CORS allowlist, express-rate-limit |
+| HTTP security | Helmet, same-origin proxy design, CSRF header and origin checks, express-rate-limit |
 | Logging | Pino and pino-http |
 | API tests | Vitest and Supertest |
 | OCR tests | pytest |
@@ -290,13 +291,17 @@ Auth request bodies:
 
 - Register: `{"email","password","name"}`
 - Login: `{"email","password"}`
-- Refresh: `{"refreshToken"}`
+- Refresh: no request body
 
-Register, login, and refresh return a user and tokens:
+Register and login set `refresh_token` as an HttpOnly, SameSite=Strict cookie and return:
 
 ```json
-{"user":{},"accessToken":"...","refreshToken":"..."}
+{"user":{},"accessToken":"..."}
 ```
+
+The refresh cookie is scoped to `Path=/api/v1/auth` and has a Max-Age equal to the refresh-token TTL. It is Secure in production or when `COOKIE_SECURE=true`. Refresh reads only the cookie, rotates it, and returns the same access-token/user JSON shape. Logout is `POST /api/v1/auth/logout`, is idempotent, revokes the cookie token, and clears the cookie.
+
+Refresh and logout require `X-Requested-With: fetch`. If `Origin` is present, it must equal `APP_ORIGIN`.
 
 - Access tokens are JWTs valid for 15 minutes.
 - Refresh tokens are random 256-bit values stored only as SHA-256 hashes.
@@ -324,7 +329,7 @@ HTTP hardening:
 
 - Helmet sets security headers and Express disables the `x-powered-by` header.
 - JSON request bodies are limited to 100 KB.
-- CORS origins come from `CORS_ORIGINS` as a comma-separated allowlist. Wildcards are not allowed.
+- CORS is intentionally disabled. The browser reaches Express through the Vite development proxy or the web-container proxy, keeping the browser and API on one origin.
 - Login and registration share a bucket limited to 10 requests per 15 minutes per IP by default. Refresh has a separate bucket with the same default window.
 - Limits and the window are configurable through `AUTH_LOGIN_REGISTER_LIMIT`, `AUTH_REFRESH_LIMIT`, and `AUTH_RATE_LIMIT_WINDOW_MS`.
 - Auth endpoints return HTTP 429 in the standard error format when limited.

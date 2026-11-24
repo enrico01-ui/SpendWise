@@ -53,14 +53,4 @@ describe("GET /health", () => {
     );
   });
 
-  it("rejects a disallowed CORS origin", async () => {
-    const response = await request(createApp())
-      .get("/health")
-      .set("Origin", "https://evil.example");
-
-    expect(response.status).toBe(403);
-    expect((JSON.parse(response.text) as unknown as ErrorBody).error.code).toBe(
-      "CORS_REJECTED",
-    );
-  });
 });
