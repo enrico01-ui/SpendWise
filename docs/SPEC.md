@@ -78,7 +78,7 @@ Money is stored and returned as integer rupiah. API dates use ISO strings.
 
 ## Database schema
 
-The Prisma schema is the source of truth. It currently defines nine models:
+The Prisma schema is the source of truth. It currently defines eight models:
 
 - `User`
 - `RefreshToken`
@@ -86,7 +86,6 @@ The Prisma schema is the source of truth. It currently defines nine models:
 - `Receipt`
 - `ReceiptItem`
 - `OcrRun`
-- `GroundTruth`
 - `Correction`
 - `Budget`
 
@@ -177,7 +176,6 @@ model Receipt {
   items         ReceiptItem[]
   ocrRuns       OcrRun[]
   corrections   Correction[]
-  groundTruth   GroundTruth?
   @@index([userId, purchaseDate(sort: Desc)])
   @@index([userId, status])
   @@index([imageHash])
@@ -209,17 +207,6 @@ model OcrRun {
   @@index([receiptId])
 }
 
-model GroundTruth {
-  id           String   @id @default(uuid())
-  receiptId    String   @unique
-  merchantName String
-  purchaseDate DateTime @db.Date
-  totalAmount  Int
-  items        Json?
-  split        String
-  receipt      Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
-}
-
 model Correction {
   id             String   @id @default(uuid())
   receiptId      String
@@ -242,8 +229,6 @@ model Budget {
   @@unique([userId, categoryId, month])
 }
 ```
-
-The `GroundTruth` model is retained in the schema. It is removed in the evaluation harness feature, meaning it is not used by or exposed through HTTP evaluation endpoints.
 
 PostgreSQL additionally requires:
 
@@ -407,13 +392,20 @@ interface. The worker currently sends an empty preprocessing configuration.
 
 Each preprocessing step can be disabled independently. OCR engines and preprocessing options remain an explicit configuration contract.
 
-Evaluation uses a CLI, not HTTP endpoints. The test data must be split into 30 development receipts and 20 test receipts. The test split is used once for final evaluation.
+Evaluation uses the `ocr` CLI, not HTTP endpoints. It reads
+`data/ground_truth.csv` and images from `data/receipts/`; the `test` split
+requires explicit `--confirm-test`. Blank merchant, date, or total labels skip
+only that field's metric. Merchant comparisons uppercase and normalize
+whitespace, then use `difflib` similarity with a configurable threshold.
 
-The evaluation CLI reports:
+Run a development evaluation with
+`make eval LABEL=baseline ENGINE=tesseract PRESET=none SPLIT=dev`, or on
+Windows with `.\scripts\eval.ps1 -Label baseline -Engine tesseract -Preset none -Split dev`.
+To evaluate `test`, pass `CONFIRM_TEST=true` to Make or add `-ConfirmTest` to
+the PowerShell command.
 
-- Exact accuracy for total, date, and merchant.
-- Character error rate on repeated raw-text samples.
-- Median processing time.
-- Percentage of receipts requiring review.
-- Duplicate precision and recall.
-- Category accuracy and macro-F1 when the classification model is implemented.
+The CLI reports exact-match accuracy for total and date, thresholded merchant
+accuracy, character error rate for labeled full-text rows, median seconds per
+receipt, and failures. Each field metric reports its number of labeled rows
+used. Markdown and JSON summaries and a wrong-fields CSV are written to
+`eval-results/`.

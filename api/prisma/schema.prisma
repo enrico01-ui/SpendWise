@@ -82,7 +82,6 @@ model Receipt {
   items         ReceiptItem[]
   ocrRuns       OcrRun[]
   corrections   Correction[]
-  groundTruth   GroundTruth?
   @@index([userId, purchaseDate(sort: Desc)])
   @@index([userId, status])
   @@index([imageHash])
@@ -112,17 +111,6 @@ model OcrRun {
   createdAt        DateTime @default(now())
   receipt          Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   @@index([receiptId])
-}
-
-model GroundTruth {
-  id           String   @id @default(uuid())
-  receiptId    String   @unique
-  merchantName String
-  purchaseDate DateTime @db.Date
-  totalAmount  Int
-  items        Json?
-  split        String
-  receipt      Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
 }
 
 model Correction {

@@ -1,0 +1,29 @@
+{
+  "engine": "tesseract",
+  "split": "test",
+  "receipts": 10,
+  "failures": 0,
+  "merchant_threshold": 0.8,
+  "metrics": {
+    "total_accuracy": {
+      "accuracy": 0.0,
+      "used": 10
+    },
+    "date_accuracy": {
+      "accuracy": null,
+      "used": 0
+    },
+    "merchant_accuracy": {
+      "accuracy": null,
+      "used": 0
+    },
+    "character_error_rate": {
+      "rate": null,
+      "used": 0,
+      "reference_characters": 0
+    },
+    "median_seconds_per_receipt": 7.94810047149997
+  },
+  "label": "baseline",
+  "preprocess": "configs/none.json"
+}

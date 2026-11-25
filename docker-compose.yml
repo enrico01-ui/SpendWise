@@ -42,6 +42,8 @@ services:
       OCR_PORT: ${OCR_PORT:-8000}
     volumes:
       - uploads:/app/uploads
+      - ./data:/app/data:ro
+      - ./eval-results:/app/eval-results
 
   web:
     build:

@@ -9,6 +9,9 @@ import pytesseract
 class OcrResult:
     raw_text: str
     confidence: float
+    merchant: str | None = None
+    date: str | None = None
+    total: int | None = None
 
 
 class OcrEngine(Protocol):
