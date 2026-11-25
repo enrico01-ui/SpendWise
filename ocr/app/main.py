@@ -1,5 +1,5 @@
+import json
 import os
-import time
 
 import cv2
 import numpy as np
@@ -7,7 +7,8 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.engines import available_engines, get_engine
+from app.engines import available_engines
+from app.images import decode_image
 from app.models import (
     HealthResponse,
     OcrExtractResponse,
@@ -15,6 +16,7 @@ from app.models import (
     OcrFields,
     PHashResponse,
 )
+from app.pipeline import run_pipeline
 
 app = FastAPI(title="SpendWise OCR")
 
@@ -56,48 +58,44 @@ async def validation_exception_handler(
     )
 
 
-def decode_image(contents: bytes) -> np.ndarray:
-    image = cv2.imdecode(
-        np.frombuffer(contents, dtype=np.uint8),
-        cv2.IMREAD_UNCHANGED,
-    )
-    if image is None:
-        raise HTTPException(status_code=422, detail="Invalid image")
-    if len(image.shape) == 2:
-        return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-    if image.shape[2] == 4:
-        return cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
-    return image
-
-
 @app.post("/ocr/extract", response_model=OcrExtractResponse)
 async def extract(
     image: UploadFile = File(...),
     engine: str = Form(...),
     preprocess: str = Form(...),
 ) -> OcrExtractResponse:
-    del preprocess
     if engine not in available_engines():
         raise HTTPException(
             status_code=422,
             detail=f"Unknown OCR engine: {engine}",
         )
 
+    try:
+        preprocess_config = json.loads(preprocess)
+    except json.JSONDecodeError as error:
+        raise HTTPException(
+            status_code=422,
+            detail="Preprocessing configuration must be valid JSON",
+        ) from error
+    if not isinstance(preprocess_config, dict):
+        raise HTTPException(
+            status_code=422,
+            detail="Preprocessing configuration must be a JSON object",
+        )
+
     contents = await image.read()
     decoded = decode_image(contents)
-    start = time.perf_counter()
-    result = get_engine(engine).extract(decoded)
-    duration_ms = int((time.perf_counter() - start) * 1000)
+    result = run_pipeline(decoded, engine, preprocess_config)
 
     return OcrExtractResponse(
-        engine=engine,
-        durationMs=duration_ms,
+        engine=result.engine,
+        durationMs=result.duration_ms,
         confidence=result.confidence,
         rawText=result.raw_text,
         fields=OcrFields(
-            merchant=OcrField(value=None, confidence=None),
-            date=OcrField(value=None, confidence=None),
-            total=OcrField(value=None, confidence=None),
+            merchant=OcrField(value=result.merchant, confidence=None),
+            date=OcrField(value=result.date, confidence=None),
+            total=OcrField(value=result.total, confidence=None),
             items=[],
         ),
         warnings=[],

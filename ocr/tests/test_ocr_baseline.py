@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
 import pytesseract
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.pipeline import ExtractResult
 
 
 client = TestClient(app)
@@ -72,6 +74,48 @@ def test_unknown_engine_returns_standard_422_error() -> None:
     error = response.json()["error"]
     assert set(error) == {"code", "message", "details"}
     assert error["code"] == "VALIDATION_ERROR"
+
+
+def test_extract_uses_shared_pipeline_with_preprocess_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received: dict[str, object] = {}
+
+    def fake_pipeline(
+        image: np.ndarray,
+        engine_name: str,
+        preprocess_config: dict[str, object],
+    ) -> ExtractResult:
+        received["image"] = image
+        received["engine"] = engine_name
+        received["preprocess"] = preprocess_config
+        return ExtractResult(
+            engine=engine_name,
+            duration_ms=12,
+            confidence=0.9,
+            raw_text="SHOP",
+            merchant="SHOP",
+            date="2026-01-02",
+            total=1000,
+        )
+
+    monkeypatch.setattr("app.main.run_pipeline", fake_pipeline)
+    image = np.full((32, 32, 3), 255, dtype=np.uint8)
+    response = client.post(
+        "/ocr/extract",
+        data={
+            "engine": "tesseract",
+            "preprocess": '{"threshold": 128}',
+        },
+        files={"image": ("receipt.png", png_bytes(image), "image/png")},
+    )
+
+    assert response.status_code == 200
+    assert received["engine"] == "tesseract"
+    assert received["preprocess"] == {"threshold": 128}
+    assert response.json()["fields"]["merchant"]["value"] == "SHOP"
+    assert response.json()["fields"]["date"]["value"] == "2026-01-02"
+    assert response.json()["fields"]["total"]["value"] == 1000
 
 
 def test_phash_is_stable_and_blur_has_small_hamming_distance() -> None:
