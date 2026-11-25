@@ -1,0 +1,5 @@
+pyarrow>=17,<18
+numpy>=1.26,<2
+datasets>=3.6,<4
+pillow
+pandas>=2.1,<3
