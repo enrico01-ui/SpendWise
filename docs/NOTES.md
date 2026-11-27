@@ -15,7 +15,7 @@ Tambah satu baris setiap menjalankan evaluasi.
 
 | Tanggal | Label | Preset | Engine | Total benar | Tanggal benar | Merchant benar | CER | Detik per struk | Catatan |
 | --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- |
-| 2026-11-27 | baseline-no-parser | none | tesseract | 0/30 (0.0%) | 0/15 (0.0%) | 0/14 (0.0%) | N/A | 2.801 | 30 struk, 0 failures; CER tidak tersedia karena 0 baris memiliki full_text |
+| 2026-11-27 | baseline-no-parser | none | tesseract | 0/30 (0.0%) | 0/15 (0.0%) | 0/14 (0.0%) | N/A | 2.421 | 30 struk, 0 failures; CER tidak tersedia karena 0 baris memiliki full_text |
 | | | | | | | | | | |
 
 ## Templat entri

@@ -100,5 +100,10 @@
       "total": 129000,
       "items": [{"name": "REVVO 90", "qty": 10, "line_total": 129000}]
     }
+  },
+  {
+    "name": "r001-grand-total",
+    "raw_text": "| | |\n| | |\nIN\n| |!\ni _..\n| ; OP\nj BANGOR\n= |\nBurger Bangor - Penggilingan\nJalan Raya Penggilingan No.37,\nPenggilingan, Cakung, Jakarta\nTimur\nP66290828-00058 |\ndna! om... 21.51 1\nke Karyawan ΓÇö : SPV Penggilingan |\nΓÇö_ Take Away ΓÇö | |\nCreany Garlic Cheese |\n} j | 1x Rp22, 727 Rp22.7216 |\nIu a BBQ Smoked Beef\na ee Rp27.272 |\n3 > Hi Ba NN\nre ae | Subtotal: -Rp50.000 |\nia | ize Total ┬╗ Rp30.000\n(mp f | Pajak : Rp6.000 |\n2 1 Grand Total + Ro85.000 |\n! Gopay : Rp55.000 k\n; Jika ada keluhan jangan ragu :\nF untuk menghubungi kami. Terima\n, Kasih\n| Whatsapp: 08667007116\nInstagram : @burgerbangor\nWebsite 3 WWW. fe\nburgerbangorindonesi ΓÇö\na.com | ae",
+    "expected": { "total": 55000 }
   }
 ]
