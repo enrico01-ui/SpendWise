@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.parser import ParsedItem
 from app.pipeline import ExtractResult
 
 
@@ -55,8 +56,11 @@ def test_extract_recognizes_synthetic_text_when_tesseract_is_available() -> None
     assert isinstance(body["durationMs"], int)
     assert 0 <= body["confidence"] <= 1
     assert body["fields"]["merchant"]["value"] is None
+    assert body["fields"]["merchant"]["confidence"] == 0.0
     assert body["fields"]["date"]["value"] is None
+    assert body["fields"]["date"]["confidence"] == 0.0
     assert body["fields"]["total"]["value"] is None
+    assert body["fields"]["total"]["confidence"] == 0.0
     assert body["fields"]["items"] == []
     assert body["warnings"] == []
 
@@ -97,6 +101,7 @@ def test_extract_uses_shared_pipeline_with_preprocess_config(
             merchant="SHOP",
             date="2026-01-02",
             total=1000,
+            items=[ParsedItem(name="TEA", qty=1, line_total=1000)],
         )
 
     monkeypatch.setattr("app.main.run_pipeline", fake_pipeline)
@@ -114,8 +119,17 @@ def test_extract_uses_shared_pipeline_with_preprocess_config(
     assert received["engine"] == "tesseract"
     assert received["preprocess"] == {"threshold": 128}
     assert response.json()["fields"]["merchant"]["value"] == "SHOP"
+    assert response.json()["fields"]["merchant"]["confidence"] == 0.0
     assert response.json()["fields"]["date"]["value"] == "2026-01-02"
     assert response.json()["fields"]["total"]["value"] == 1000
+    assert response.json()["fields"]["items"] == [
+        {
+            "name": "TEA",
+            "qty": 1.0,
+            "lineTotal": 1000,
+            "confidence": 0.0,
+        }
+    ]
 
 
 def test_phash_is_stable_and_blur_has_small_hamming_distance() -> None:

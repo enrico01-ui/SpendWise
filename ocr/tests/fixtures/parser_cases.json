@@ -1,0 +1,109 @@
+[
+  {
+    "name": "minimarket_indomaret",
+    "raw_text": "INDOMARET\nJL. MERDEKA 10\n08/11/26 14:32\nAQUA 600ML 2 7.000\nTOTAL 47.500\nTUNAI 50.000\nKEMBALI 2.500",
+    "expected": {
+      "merchant": "INDOMARET",
+      "date": "2026-11-08",
+      "total": 47500,
+      "items": [{"name": "AQUA 600ML", "qty": 2, "line_total": 7000}]
+    }
+  },
+  {
+    "name": "minimarket_alfamart",
+    "raw_text": "ALFAMART\n09-07-2026 10:15\nROTI TAWAR 1 18.500\nSUSU UHT 2 24.000\nTOTAL BAYAR 42.500",
+    "expected": {
+      "merchant": "ALFAMART",
+      "date": "2026-07-09",
+      "total": 42500,
+      "items": [
+        {"name": "ROTI TAWAR", "qty": 1, "line_total": 18500},
+        {"name": "SUSU UHT", "qty": 2, "line_total": 24000}
+      ]
+    }
+  },
+  {
+    "name": "minimarket_hypermart",
+    "raw_text": "HYPERMART\nTRANSACTION DATE 6/4/23\nMINYAK GORENG 1 32,000\nTOTAL 32,000\nCASH 40,000\nCHANGE 8,000",
+    "expected": {
+      "merchant": "HYPERMART",
+      "date": "2023-04-06",
+      "total": 32000,
+      "items": [{"name": "MINYAK GORENG", "qty": 1, "line_total": 32000}]
+    }
+  },
+  {
+    "name": "restaurant_bree_coffee",
+    "raw_text": "BREE COFFEE AND KITCHEN\n12/10/26 19:42\nICED LATTE 2 x 32.000\nCAKE 1 x 28.000\nTOTAL 92.000",
+    "expected": {
+      "merchant": "BREE COFFEE AND KITCHEN",
+      "date": "2026-10-12",
+      "total": 92000,
+      "items": [
+        {"name": "ICED LATTE", "qty": 2, "line_total": 64000},
+        {"name": "CAKE", "qty": 1, "line_total": 28000}
+      ]
+    }
+  },
+  {
+    "name": "restaurant_ramen1",
+    "raw_text": "RAMEN1 OP SEMARANG\n2026-11-04 12:20\nRAMEN SPICY 1 55.000\nTEA 2 20.000\nTOTAL TAGIHAN 75.000",
+    "expected": {
+      "merchant": "RAMEN1",
+      "date": "2026-11-04",
+      "total": 75000,
+      "items": [
+        {"name": "RAMEN SPICY", "qty": 1, "line_total": 55000},
+        {"name": "TEA", "qty": 2, "line_total": 20000}
+      ]
+    }
+  },
+  {
+    "name": "restaurant_kakkooii",
+    "raw_text": "KAKKOII JAPANESE BBQ & SHABU-SHABU\n05/11/2026\nSET BBQ 2 180.000\nJUICE 1 25.000\nTOTAL BAYAR RP 205.000",
+    "expected": {
+      "merchant": "KAKKOII JAPANESE BBQ & SHABU-SHABU",
+      "date": "2026-11-05",
+      "total": 205000,
+      "items": [
+        {"name": "SET BBQ", "qty": 2, "line_total": 180000},
+        {"name": "JUICE", "qty": 1, "line_total": 25000}
+      ]
+    }
+  },
+  {
+    "name": "fuel_station_pertamina",
+    "raw_text": "PERTAMINA\n08/11/26 07:10\nPERTAMAX 20.00 L x 13.000\nTOTAL 260.000\nTUNAI 300.000\nKEMBALI 40.000",
+    "expected": {
+      "merchant": "PERTAMINA",
+      "date": "2026-11-08",
+      "total": 260000,
+      "items": [{"name": "PERTAMAX", "qty": 20, "line_total": 260000}]
+    }
+  },
+  {
+    "name": "fuel_station_shell",
+    "raw_text": "SHELL\n2026-11-12 16:05\nSHELL SUPER 15.50 L\nHARGA 15.000/L\nTOTAL BAYAR RP 232.500,00",
+    "expected": {
+      "merchant": "SHELL",
+      "date": "2026-11-12",
+      "total": 232500,
+      "items": [{"name": "SHELL SUPER", "qty": 15.5, "line_total": 232500}]
+    }
+  },
+  {
+    "name": "fuel_station_vivo",
+    "raw_text": "VIVO ENERGY\n09-11-2026 21:30\nREVVO 90 10.00 L x 12.900\nTOTAL BAYAR 129.000\nCASH 150.000\nCHANGE 21.000",
+    "expected": {
+      "merchant": "VIVO ENERGY",
+      "date": "2026-11-09",
+      "total": 129000,
+      "items": [{"name": "REVVO 90", "qty": 10, "line_total": 129000}]
+    }
+  },
+  {
+    "name": "r001-grand-total",
+    "raw_text": "| | |\n| | |\nIN\n| |!\ni _..\n| ; OP\nj BANGOR\n= |\nBurger Bangor - Penggilingan\nJalan Raya Penggilingan No.37,\nPenggilingan, Cakung, Jakarta\nTimur\nP66290828-00058 |\ndna! om... 21.51 1\nke Karyawan ΓÇö : SPV Penggilingan |\nΓÇö_ Take Away ΓÇö | |\nCreany Garlic Cheese |\n} j | 1x Rp22, 727 Rp22.7216 |\nIu a BBQ Smoked Beef\na ee Rp27.272 |\n3 > Hi Ba NN\nre ae | Subtotal: -Rp50.000 |\nia | ize Total ┬╗ Rp30.000\n(mp f | Pajak : Rp6.000 |\n2 1 Grand Total + Ro85.000 |\n! Gopay : Rp55.000 k\n; Jika ada keluhan jangan ragu :\nF untuk menghubungi kami. Terima\n, Kasih\n| Whatsapp: 08667007116\nInstagram : @burgerbangor\nWebsite 3 WWW. fe\nburgerbangorindonesi ΓÇö\na.com | ae",
+    "expected": { "total": 55000 }
+  }
+]
