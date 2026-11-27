@@ -37,6 +37,15 @@ These are the defaults. Change a row if you decide otherwise, and keep the table
 | Total not visible (torn or cut off) | Leave `total` empty, or exclude the receipt. |
 | Foreign currency | Exclude the receipt. |
 | Merchant name spelling | Write it as printed, in uppercase. If the receipt prints several spellings, use the one at the very top. |
+| Header shows only a branch name (for example Indomaret prints `PLUS PAMEKASAN/009` and shows the brand only in the logo or footer) | Use the brand name (`INDOMARET`). |
+| Brand name followed by an outlet or location (`LOAF BUN CITRA GARDEN 2`, `RAMEN1 OP SEMARANG`) | Keep only the brand (`LOAF BUN`, `RAMEN1`). A descriptor that is part of the brand name stays (`BREE COFFEE AND KITCHEN`, `KAKKOII JAPANESE BBQ & SHABU-SHABU`). |
+| Logo shows several brands and none is clearly the merchant (`r024`) | Leave `merchant` empty. |
+| Unpaid or pre-settlement bill (`UNPAID`, `NOT PAID`, `BELUM TERBAYAR`, `Tagihan Sementara`, `PreSettlement Bill`) | Keep the receipt. `total` is the printed final amount payable. These are `r004`, `r007`, `r012`, `r015`, `r016`. |
+| Date with day and month both 12 or below (`6/4/23`, `09-07-2026`) | Day first, as in the first row. `r011` is read as 6 April 2023 and `r002` as 9 July 2026. |
+| Prices with `IDR` prefix, `Rp` prefix, or `.` and `,` thousands separators | Strip them. `total` is a plain integer. |
+| Receipt with several sections (the PLN token receipt `r009` has a bank slip above the Indomaret receipt) | Use the total of the retail receipt (`TOTAL`), not `RP BAYAR` or `Tunai`. |
+| Printed total differs from the sum of its parts by a rounding amount (`r005`, `r014`, `r017`) | Use the printed final total, as in the rounding row. |
+| Customer names, signatures, ID cards, meter and token numbers covered with a black box | The covered field is ignored. Never label a covered value. |
 
 ## Process
 

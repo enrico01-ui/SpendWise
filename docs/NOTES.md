@@ -80,3 +80,15 @@ Isi sambil jalan, lalu rapikan menjadi tulisanmu sendiri di akhir.
 - Keputusan penting dan alasannya (pilihan, alternatif, alasan, biayanya):
 - Temuan yang mengejutkan:
 - Langkah yang malah memperburuk hasil, dan dugaan penyebabnya:
+
+## Log pelabelan
+
+### 2026-11-26: label 25 struk sendiri
+
+- Yang diubah: menambah `r001`–`r025` ke `data/ground_truth.csv`. Split struk sendiri 15 dev dan 10 test, jadi gabungan dengan CORD tepat 30 dev dan 20 test.
+- Split `test` struk sendiri: `r002`, `r004`, `r009`, `r011`, `r013`, `r015`, `r017`, `r019`, `r021`, `r023`. Dipilih sebelum ada hasil OCR apa pun untuk struk sendiri, supaya `test` berisi campuran struk kusut, miring, bayangan, dan satu minimarket. Dua struk Mie Gacoan (`r006`, `r008`) sengaja sama-sama di `dev`.
+- Label dibuat dari bacaan foto oleh Claude, bukan dari keluaran OCR, tapi **belum kuverifikasi ke kertas atau foto asli**. Verifikasi dulu sebelum menjalankan eval.
+- Keputusan pelabelan baru ditulis di `docs/LABELING.md`.
+- `full_text` belum diisi untuk struk mana pun. Perlu sekitar 10 struk, ditranskripsi dari kertas.
+- Run `eval-results/20261125-181033-baseline` memakai split `test` (baris CORD saja, 10 struk) dengan hasil total 0% karena parser belum ada. Dicatat supaya jujur di README, dan `test` sebaiknya tidak dijalankan lagi sampai evaluasi final.
+- Yang perlu dicek ulang: jumlah item `r019` (aku hitung 108.800, total tercetak 108.500), tanggal `r011` (`6/4/23`, dibaca 6 April 2023), `r024` (merchant sengaja kosong karena logo memuat beberapa merek), dan `r017` (dilabeli `RAMEN1`, tapi header menulis `RAMEN1 OP SEMARANG`, jadi kemiripan merchant bisa di bawah ambang 0,8).

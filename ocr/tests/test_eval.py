@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from app.engines import OcrResult
+from app.pipeline import ExtractResult
 from eval.core import evaluate, levenshtein_distance
 from eval.run import parse_args, write_reports
 
@@ -91,6 +92,22 @@ def test_evaluate_calculates_metrics_and_skips_empty_labels(
     write_ground_truth(ground_truth)
     monkeypatch.setitem(engines._ENGINES, "tesseract", FakeEngine())
 
+    def fake_pipeline(
+        image: np.ndarray,
+        engine_name: str,
+        _preprocess_config: dict[str, object],
+    ) -> ExtractResult:
+        result = FakeEngine().extract(image)
+        return ExtractResult(
+            engine=engine_name,
+            duration_ms=0,
+            confidence=result.confidence,
+            raw_text=result.raw_text,
+            merchant=result.merchant,
+            date=result.date,
+            total=result.total,
+        )
+
     summary, errors = evaluate(
         ground_truth,
         receipts_dir,
@@ -98,6 +115,7 @@ def test_evaluate_calculates_metrics_and_skips_empty_labels(
         "tesseract",
         {},
         0.8,
+        pipeline=fake_pipeline,
     )
 
     metrics = summary["metrics"]

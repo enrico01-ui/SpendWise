@@ -93,10 +93,24 @@ async def extract(
         confidence=result.confidence,
         rawText=result.raw_text,
         fields=OcrFields(
-            merchant=OcrField(value=result.merchant, confidence=None),
-            date=OcrField(value=result.date, confidence=None),
-            total=OcrField(value=result.total, confidence=None),
-            items=[],
+            merchant=OcrField(
+                value=result.merchant,
+                confidence=result.merchant_confidence,
+            ),
+            date=OcrField(value=result.date, confidence=result.date_confidence),
+            total=OcrField(
+                value=result.total,
+                confidence=result.total_confidence,
+            ),
+            items=[
+                {
+                    "name": item.name,
+                    "qty": item.qty,
+                    "lineTotal": item.line_total,
+                    "confidence": 0.0,
+                }
+                for item in result.items
+            ],
         ),
         warnings=[],
     )
