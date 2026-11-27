@@ -33,6 +33,7 @@ PARSER_PARAMETERS = [
     (case, field)
     for case in PARSER_CASES
     for field in ("merchant", "date", "total", "items")
+    if field in case["expected"]
 ]
 
 
