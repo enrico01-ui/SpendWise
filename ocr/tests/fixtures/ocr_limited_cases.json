@@ -1,0 +1,20 @@
+[
+    {
+        "name": "r002-grand-total",
+        "raw_text": "4 8 KAKKON JAPANESE\ni ' re HARANGSAR! NO. ΓÇ£\nYam\nae + 08-01-2028 18:48\nTable L\nurpose\nAdult mice aoe\nTx 175.000 ae 1.225.000\nKids Reguler Price (80 Minutes)\ntx 8115.000 115,000 5\n| Senior Reguler Price (90 Kirutes)\ntx 155,000 186.000\nKuah Chicken Spicy\nx 00 0\n4 | kuah Tom Yan\nx 0 0\nKuah Shabu\n> x 0 0\na oti Kuah Ton Yan (250 al) i\nme\nSS Pei Kuah chicken #127 (250 al) ΓÇÿ\nSS a an itens: sutotal 1,495,000\nNG ΓÇ£4 0 : 14.150\nNa pal: 188.975\nNAN God Total 2 AANG\nSN a (RIS 2 1.128.125\nSS de\n7 _ 2 naa\nΓÇÿ wera HENRI KOMPLAIN\nJane: SETELAH MENINGGALKAN KASIR\nA ae\n4 a\nma 4",
+        "expected": { "total": 1726725 },
+        "note": "OCR tidak memuat nominal Grand Total; ulangi setelah preprocessing (F2.3)"
+    },
+    {
+        "name": "r006-grand-total",
+        "raw_text": "Ng\nae\n. ee\nGAcoAN =\nA KERAVANG JANA BARAT a\"\nJ1. Raya Telagasari-Kosambi No, 6800\nTG: Gnie.gacoan\n(ate + 43-04-2025 17:05\nInfo :\nFirpose + D2 TAKE AWAY .\nCashier + ROSSA _ S\n1 WIE GACOAN LY 8 ee = oe\n4 WIE GACOAN wees ΓÇÿOo See\nΓÇÿ4 WIE GACOAN LY 2 Saga Bess Se)\n┬ó MIE GACOAN LV 6 56.820 Tae\nΓÇö MIE GACOAN LV 1 34,092 ey Mn\n┬⌐ MIE GACOAN LV 3 71,464 op: AN\n{WIE GACOAN LV 4 40.455 ; 5...\n| IN UpANG RANBUTAN 73.188 = 3g\nHwa KE 101485 > a\n├⌐ 4 SIOMAY AYAM >; =\n1 2) itens ubtotal TN . > mt\n| = : w\n| gaat; SONG f\nCASH SU\n8 = tas Kunjungan Anda:\nTerima Kasil Aa ag Kembali\na eat Datang\ng PA\nANN a\nee . 2 (\nLg FN",
+        "expected": { "total": 370000 },
+        "note": "OCR tidak memuat nominal Grand Total; ulangi setelah preprocessing (F2.3)"
+    },
+    {
+        "name": "r007-grand-total",
+        "raw_text": "Razz coffee nongki\njln Sisingamangaraja no 185\n6282168799810\nΓÇ£Tagihan Sementara--- 7\nNo. Tagihan\n: Tagihan |\n-┬╗ Tempat 3 _\nKaktu or 27/03/25\nIx Kentang goreng Rp12. 000\n1x Nugget Rp12. 000\n3x RAMADHAN 1 Rp84. 000\nAYAM MENTEGA\n4x RAMADHAN 2 Rp112. 000\nNASI BURUNG\nSAMBAL IJO\n1x Sosis Rp12. 009\n4 4 Subtota | ae Rp232. 0g\nET\nPa kasih datang nongkj 1.ΓÇ¥\nae Razz yan! Tag\npowered by youtap, id ~\nyoutap : ~",
+        "expected": { "total": 232000 },
+        "note": "OCR tidak memuat nominal Grand Total; ulangi setelah preprocessing (F2.3)"
+    }
+]

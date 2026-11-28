@@ -103,7 +103,39 @@
   },
   {
     "name": "r001-grand-total",
-    "raw_text": "| | |\n| | |\nIN\n| |!\ni _..\n| ; OP\nj BANGOR\n= |\nBurger Bangor - Penggilingan\nJalan Raya Penggilingan No.37,\nPenggilingan, Cakung, Jakarta\nTimur\nP66290828-00058 |\ndna! om... 21.51 1\nke Karyawan ΓÇö : SPV Penggilingan |\nΓÇö_ Take Away ΓÇö | |\nCreany Garlic Cheese |\n} j | 1x Rp22, 727 Rp22.7216 |\nIu a BBQ Smoked Beef\na ee Rp27.272 |\n3 > Hi Ba NN\nre ae | Subtotal: -Rp50.000 |\nia | ize Total ┬╗ Rp30.000\n(mp f | Pajak : Rp6.000 |\n2 1 Grand Total + Ro85.000 |\n! Gopay : Rp55.000 k\n; Jika ada keluhan jangan ragu :\nF untuk menghubungi kami. Terima\n, Kasih\n| Whatsapp: 08667007116\nInstagram : @burgerbangor\nWebsite 3 WWW. fe\nburgerbangorindonesi ΓÇö\na.com | ae",
+    "raw_text": "| | |\n| | |\nIN\n| |!\ni _..\n| ; OP\nj BANGOR\n= |\nBurger Bangor - Penggilingan\nJalan Raya Penggilingan No.37,\nPenggilingan, Cakung, Jakarta\nTimur\nP66290828-00058 |\ndna! om... 21.51 1\nke Karyawan ΓÇö : SPV Penggilingan |\nΓÇö_ Take Away ΓÇö | |\nCreany Garlic Cheese |\n} j | 1x Rp22, 727 Rp22.7216 |\nIu a BBQ Smoked Beef\na ee Rp27.272 |\n3 > Hi Ba NN\nre ae | Subtotal: -Rp50.000 |\nia | ize Total ┬╗ Rp30.000\n(mp f | Pajak : Rp6.000 |\n2 1 Grand Total + Ro55.000 |\n! Gopay : Rp55.000 k\n; Jika ada keluhan jangan ragu :\nF untuk menghubungi kami. Terima\n, Kasih\n| Whatsapp: 08667007116\nInstagram : @burgerbangor\nWebsite 3 WWW. fe\nburgerbangorindonesi ΓÇö\na.com | ae",
     "expected": { "total": 55000 }
+  },
+  
+  {
+    "name": "r003-grand-total",
+    "raw_text": "SR ge\nate ┬ú Ms\n(MIX\nKI SINCE 1997 Leg CREAM & TEA\nMakan dj tempat #146 -\nSungai Kunjang , ]\nWakty Pemesanan: 2023-03-22 15:33:17\n4 a\nNama harga Satuan Kuantitas Subtotal | ΓÇÿa\nBoba Sundae 16,000 1 16,000 j\nAtribut: Normal icenormaj Sugar\nChocolate Oreo Smoothies Granda) '\n16,009 ih 16,000\nKiwi Fruit TeafTah\n15,000 il 15,000\nAtribut: Normal icenormaj Sugar\nTo oe Pe on\nJ Total 3 47,000 Mi\nPi naa al ΓÇö Bei ee\n4 aE 1.Cash 50,000\na ell Slee AN sae mnie Lg\nMeng Yang kembalian 3,000 :\nae Kasir 8022016150)\nup ses Alamat\n1 sial i Waktu 2023 03.22 15:33:53\na 4",
+    "expected": { "total": 47000 }
+  },
+  {
+    "name": "r004-grand-total",
+    "raw_text": "Date 1 ΓÇö\ntahta 1e-lor2oz1 / 16:18\nΓÇ£a\nBAKED NORWEGTAN SALMON\n1 X 132,000 132,000\nGRILLED CHICKEN\n1 X 70,000 70,000\nFISH N CHIP\n2 x 58,000 116,000\nCIRENG\n2 Xx 24,000 48,000\nMUSHROOM soup\n1 X 432,000 42,000\nICE Larre\n1 x 37,000 37,000\nICE TEA\n1 x 15,000 15,000\nPREMIUM TEA\n2 X 22,000 44,000\n#=NFUSiON\n2x0 ig\nICE LEMON TRA\ni X 24,000 Baoan\nICE MATCHA\n1 X 36,000 36,000\nMIE GORENG EBI\n1 X 42,000 42,000\nNASI GORENG SUDUT RASA\n1 X 46,000 46,000\nICE TEA\n1 X 15,000 15,000\nICE LYCHEE TEA\n1 X 26,000 26,000\nSub Total 693,000\nService 34,650\nTax 10% aoe\nRounding ΓÇ£A1\nTOTAL 800,000\nUNPAID - PRE SETTLEMENT",
+    "expected": { "total": 800000 }
+  },
+  
+  {
+    "name": "r009-grand-total",
+    "raw_text": "MAYJEN SUNGKONO- STDOARUO/ 0318076278\nBANK MANDIRI\nSTRUK PEMBELIAN LISTRIK PRABAYAR\nINO METER\nTDPEL\nJAMA\nTARIF/DAYA A\nJPA REF : IND21019E65122E\nA2FO60┬░ 0M435EB0\nRP BAYAR : TOR 102,500\nMETERAT : TDR 0 15\nPPN : IDR 6 00\nPPJ TOR 8,257.00\nANGSURAN : TOR 0.00\nRP STROOM/TOKEN - IDR 91,743.00\nIML KWH 162.6\nSTROOM/TOKEN. MN\nADMIN BANK pn 7\na Informasi Hubungi (; \"ente atau\nΓÇö hubungi Fo Ikat\nna 1G301F3V5-(07/10/2017 12:22:55)-CA) |\nMI 07.10.17-12:23 2.1.10 M490354/ROSA/O1 | mana\nPLN PRABAYAR PCS 1 100000 100,000 aa\nBIAYA ADM. : 2,500 [Pertti\nPPN: DPP= 2,273 PPN= 227\nNON PPN : OPP= 100,000\nke ANDA MEMPEROLEH >\ni-KUPON: Luca\n#BANJIR HADIAH PLN T ORT = 30 NOV 2017\nSHS KE 99333 FORMAT : TOMCSPAST)T-KUPONE\nNAMAHNO. KTPAGENDER#UMURAKOTA DOMISTLT\nTERIMA KASIH, SELAMAT BELANJA KEMBALI\n===:== LAYANAN KONSUMEN INDOMARET ------\nSMS 0816 500 580 CALL 1500580 sisi\nEMAIL:KONTAKOINDOHARET.CO. 10.",
+    "expected": { "total": 102500 }
+  },
+  {
+    "name": "r010-grand-total",
+    "raw_text": "PLUS PAMEKASAN/009 0324331271\nJL.JOKO TOLE NO.22, PAMEKASAN MADURA, PAME\nKASAN, 69321\n19.10, 17-12:56 2.1.10 9937/HURUL JA/02\n| GRNIER M.COOL FOAM5O 2 19900 39,800\nPLASTIK KCL 1 1 1\n. DISKON : (1)\n: HARGA JUAL ┬╗ 39,800 |\nTOTAL : 39,800\nTUNAI : 50,000\nKEMBALI : 10,200\nPPN : DPP= 36,182 PPN= 3,618\nTERIMA KASIH, SELAMAT BELANJA KEMBALI\n====== LAYANAN KONSUMEN INDOMARET -----:\nSMS 0816 500 580 CALL 1500580\nEMAIL : KONTAK@INDOMARET .CO. ID\nPT. INDOMARCO PRISMATAMA ET 9\nNPWP:01.337.994.6-099 0009 \"incre amarante",
+    "expected": { "total": 39800 }
+  },
+  {
+    "name": "r011-grand-total",
+    "raw_text": "Imperial Kitchen & biMsuM\nImperial puta Mall\njy A. YAN Melayu\ntug Blok E\nti 1 42028\nGuest check\nee 004\nFe Ae Check: 0002\nover +B\n= ben Time 3 6/4/23 16153\n: di Pint By NINA\n& | AW\n21 49,900\n1) NS GRE ppl NBL pr 9 800\n4 kW SIRAN SAPI 59,900\nik 2 8 16,900\n\"3 NS GRE SOSIS AYN GR 93,800\n4 AM GRG MENTEGA 12,900\n1 AYAM GRE pps BNG PTH 49,900\n4 & 9,900\nSTEAM RICE 99.600\n1 BAKPAO TLR ASIN DF 9,999\n1 SPAM CRG BUG PTH 41,900\n1 NS GRO TKN ASIN 16,900\n+ KW GRG SF X0 55,900\n1 SAM HATNAN 58,900\n4 AYAM ASM HNS 49,900\n21 15,900\nICED TEA (SWEET) 31,800\n1 Iced TEA (PLAIN) 15,300\nTLKSHAKE CHOCOLATE 96,900\nBeMILK TEA 19,900\n0\nREE 0\nHATNAN 58,900\nIU COOKIES 99,900\n/ D Total (RP) * 825,639\n\"ERA gc Sx(RP)* 41,335\n5 oS phi 10K(RP)┬º 86,804\n: Pn Total (RO): 954,838\n= Se nt : 954,838",
+    "expected": { "total": 954838 }
+  },
+  {
+    "name": "r012-grand-total",
+    "raw_text": "ne aE\nSUS H! es\nSUSHI HIRO PALEMBANG ICON\nPALEMBANG ICON MALL\n027115649319\nTABLE:3\nee REGULAR\nCasnter :Amir POS: POSO3\nRept# :SHICP202213104 04/08/2022 19:16\n1 CHICKEN KATSU CURRY DON 55,000\n2 CHUKA TIDAKO 100,000\n1 EMPIRE ROLL 130,000\n3 GYOZA MISO SOUP 75,000\n1 ICE OCHA 6,000\n1 INART SALMON SALAD 35,000\n1 INARE SALMON VOLCANO 40,000\n> INARI TAHAGO SPICY 70,000 a\n2 INARI TUNA SPICY SALAD 70,000 |\n1 LOBSTER GURATAN 240,000\n1 MINERAL WATER 16,000\n+ SAKURA BLOOM 45 ,000\n1 SALMON CHEESE ROLL 130,000\nTRAWBERRY TEA 35,000\nPICAL BLUSH 45,000\n(BTOTAL 1,096,000\nService 82,200\nPB! 117,820\nTOTAL 1,296,020\nTotal item: 15 Total Aty: 20\nPreSettlemant Bill\n04/08/2022 19:16",
+    "expected": { "total": 1296020 }
   }
 ]

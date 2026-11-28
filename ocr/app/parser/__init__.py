@@ -1,9 +1,14 @@
+import re
 """Receipt field parsing scaffold and result types."""
 
 from dataclasses import dataclass, field
 
 from app.parser.text import normalize_idr, normalize_text, split_lines
 
+
+MONEY = re.compile(r"\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{2})?|\d{4,}")
+SKIP_WORDS = ("SUBTOTAL", "ITEM", "QTY")
+PAY_WORD = re.compile(r"\bBAYAR\b")
 
 @dataclass(frozen=True)
 class ParsedItem:
@@ -39,14 +44,31 @@ def parse_date(raw_text: str) -> str | None:
     return None
 
 
-def parse_total(raw_text: str) -> int | None:
-    """TODO: Extract the final amount payable as integer rupiah.
 
-    Use the printed final payable total, never a TUNAI, CASH, KEMBALI, or CHANGE
-    line. Follow the SPEC total field; return None when no total is readable.
-    """
-    del raw_text
-    return None
+
+def parse_total(raw_text: str) -> int | None:
+    """Extract the final amount payable as integer rupiah."""
+    candidates = []
+    for line in split_lines(raw_text):
+        upper = line.upper()
+        if "TOTAL" not in upper and not PAY_WORD.search(upper):
+            continue
+        if any(word in upper for word in SKIP_WORDS):
+            continue
+        amounts = MONEY.findall(line)
+        if not amounts:
+            continue
+        try:
+            value = normalize_idr(amounts[-1])
+        except ValueError:
+            continue
+        candidates.append(("GRAND" in upper, value))
+    if not candidates:
+        return None
+    for is_grand, value in candidates:
+        if is_grand:
+            return value
+    return candidates[-1][1]
 
 
 def parse_items(raw_text: str) -> list[ParsedItem]:

@@ -16,6 +16,7 @@ Tambah satu baris setiap menjalankan evaluasi.
 | Tanggal | Label | Preset | Engine | Total benar | Tanggal benar | Merchant benar | CER | Detik per struk | Catatan |
 | --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- |
 | 2026-11-27 | baseline-no-parser | none | tesseract | 0/30 (0.0%) | 0/15 (0.0%) | 0/14 (0.0%) | N/A | 2.421 | 30 struk, 0 failures; CER tidak tersedia karena 0 baris memiliki full_text |
+| 2026-11-28 | parser-total | none | tesseract | 9/30 (30.0%) | 0/15 (0.0%) | 0/13 (0.0%) | N/A | 1.936 | parse_total v3; CORD 2/15, struk sendiri 7/15; 13 CORD kosong belum diselidiki |
 | | | | | | | | | | |
 
 ## Templat entri
@@ -46,7 +47,18 @@ Salin blok ini untuk setiap eksperimen baru.
 - Yang kuamati: struk yang berbayangan membaik, tapi struk thermal pudar justru kehilangan angka
 - Keputusan: C diturunkan dan dicoba lagi; hasilnya dicatat di entri berikutnya
 - Commit: abc1234
+
+### 2026-11-28: parse_total
+
+- Yang diubah: menulis parse_total. Baris yang memuat TOTAL atau kata BAYAR dijadikan kandidat, angka berbentuk uang paling kanan diambil, GRAND TOTAL diutamakan, dan baris SUBTOTAL, ITEM, QTY dilewati.
+- Hipotesis: nominal total ada di baris yang memuat kata TOTAL, dan baris itu harus dibedakan dari subtotal dan jumlah barang.
+- Perintah atau konfigurasi: pytest -k total; eval.ps1 -Label parser-total -Preset none -Split dev
+- Hasil: kasus uji 14/19 lulus (versi 2) lalu 16/19 (versi 3). Evaluasi dev: total benar 0% ke <NN>%.
+- Yang kuamati: (1) baris 'Total item: 15 Total Qty: 20' muncul setelah baris TOTAL sehingga angka 20 terambil (r012); (2) nominal ada di baris 'RP BAYAR' yang tidak memuat kata TOTAL, dan kata 'PRABAYAR' ikut cocok kalau BAYAR dicari sebagai potongan huruf (r009); (3) angka kecil seperti 2 diterima sebagai uang. Tiga kasus lain (r002, r006, r007) tidak bisa diperbaiki parser karena teks OCR tidak memuat nominalnya.
+- Keputusan: versi 3 dipertahankan. r002, r006, r007 dipindah ke ocr/tests/fixtures/ocr_limited_cases.json dan dicoba lagi setelah preprocessing (F2.3).
+- Commit: <hash dari git log --oneline -1>
 ```
+
 
 ## Kegagalan berulang
 
@@ -92,3 +104,11 @@ Isi sambil jalan, lalu rapikan menjadi tulisanmu sendiri di akhir.
 - `full_text` belum diisi untuk struk mana pun. Perlu sekitar 10 struk, ditranskripsi dari kertas.
 - Run `eval-results/20261125-181033-baseline` memakai split `test` (baris CORD saja, 10 struk) dengan hasil total 0% karena parser belum ada. Dicatat supaya jujur di README, dan `test` sebaiknya tidak dijalankan lagi sampai evaluasi final.
 - Yang perlu dicek ulang: jumlah item `r019` (aku hitung 108.800, total tercetak 108.500), tanggal `r011` (`6/4/23`, dibaca 6 April 2023), `r024` (merchant sengaja kosong karena logo memuat beberapa merek), dan `r017` (dilabeli `RAMEN1`, tapi header menulis `RAMEN1 OP SEMARANG`, jadi kemiripan merchant bisa di bawah ambang 0,8).
+
+### 2026-11-28: tukar split karena kasus uji memakai struk test
+
+- Masalah: kasus uji parser dibuat dari r002, r004, r009, dan r011, yang saat itu ada di split test. Teks dan jawabannya sudah dipakai untuk menyusun aturan, jadi split test terkontaminasi.
+- Tindakan: r002, r004, r009, r011 dipindah ke dev. Empat struk dev yang belum pernah kulihat teks OCR-nya dipilih acak dengan Get-Random dan dipindah ke test: <r... r... r... r...>.
+- Split test struk sendiri sekarang: <daftar 10 struk>.
+- Dampak: belum pernah ada hasil evaluasi test untuk struk sendiri, jadi tidak ada angka yang terkontaminasi. Run test 2026-11-25 hanya memuat baris CORD dan hasilnya kosong.
+- Pelajaran: kasus uji dan aturan parser hanya dibuat dari struk dev. Ini perlu disebut di docs/EVALUATION.md.
